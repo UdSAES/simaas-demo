@@ -10,6 +10,7 @@ isort = "*"
 [packages]
 loguru = "*"
 codetiming = "*"
+aiohttp = "~=3.6"
 
 [requires]
 python_version = "3.7"
