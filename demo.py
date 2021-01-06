@@ -86,9 +86,9 @@ async def request_simulation(
     """Request simulation by POSTing to `/experiments`."""
 
     id = body["modelInstanceID"]
-    origin = os.getenv("UC1D_SIMAAS_ORIGIN")
+    origin = os.getenv("UC1D_SIMAAS_ORIGIN")  # TODO throw if not set
     href = f"{origin}/experiments"
-    logger.trace(f"POST {href}")
+    logger.debug(f"POST {href}")
 
     # Trigger simulation and wait for 201
     async with session.post(href, json=body) as res:
@@ -148,13 +148,13 @@ async def fetch_simulation_result(session: aiohttp.ClientSession, q: asyncio.Que
         id, href = await q.get()
 
         # Get simulation result
-        logger.trace(f"GET {href}")
+        logger.debug(f"GET {href}")
         async with session.get(href) as res:
             rep = await res.json()
             # logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
         # # Parse as dataframe
-        # logger.info(f"Result of simulation added to dataframe")
+        logger.info(f"Result of simulation ~~added to dataframe~~ _dropped_")
 
         # Indicate that a formerly enqueued task is complete
         q.task_done()
