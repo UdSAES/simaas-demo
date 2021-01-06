@@ -49,6 +49,23 @@ def timeseries_array_as_df(body: dict):
     return df
 
 
+def dataframe_to_json(df):
+    """Render JSON-representation of DataFrame."""
+    df.index.name = "datetime"
+
+    logger.trace("df:\n{}".format(df))
+
+    ts_value_objects = json.loads(
+        df.to_json(orient="table")
+        .replace("datetime", "timestamp")
+        .replace(df.columns[0], "value")
+    )["data"]
+    for x in ts_value_objects:
+        x["datetime"] = pendulum.parse(x["timestamp"]).isoformat()
+        x["timestamp"] = int(pendulum.parse(x["timestamp"]).format("x"))
+    return ts_value_objects
+
+
 async def request_weather_forecast(
     session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw
 ):
@@ -212,7 +229,45 @@ async def get_simulation_request_bodies():
     # df = pd.read_csv(outfile, index_col=[0, 1])
 
     logger.debug(f"df\n{df}")
+
+    # Construct request bodies from dataframe
+    bc = {}
+    for model_run in df.index.levels[0]:
+        tmp = df.loc[model_run]
+        tmp = tmp.interpolate()
+
+        start = tmp.first_valid_index().timestamp() * 1000
+
+        # Create request-body
+        request_body = {
+            # "modelInstanceID": "c02f1f12-966d-4eab-9f21-dcf265ceac71",
+            "modelInstanceID": "29f11d50-f11e-46e7-ba2f-7d69f796a101",
+            "simulationParameters": {
+                "startTime": start,
+                "stopTime": end,
+                "outputInterval": output_interval,
             },
+            "inputTimeseries": [],
+            "startValues": {"plantModel.epochOffset": start / 1000},
+        }
+
+        # Update request_body with timeserieses of temp_air, irr_diffuse and irr_direct
+        map = {
+            "t_2m": "temperature",
+            "aswdir_s": "directHorizontalIrradiance",
+            "aswdifd_s": "diffuseHorizontalIrradiance",
+            "ws_10m": "windSpeed",
+        }
+        for q in map.keys():
+            request_body["inputTimeseries"].append(
+                {
+                    "label": map[q],
+                    "unit": tmp[f"{q}_unit"][0],
+                    "timeseries": dataframe_to_json(tmp[[q]]),
+                }
+            )
+
+        bc[model_run] = request_body
 
     logger.trace(json.dumps(bc, indent=JSON_DUMPS_INDENT))
 
