@@ -11,6 +11,8 @@ isort = "*"
 loguru = "*"
 codetiming = "*"
 aiohttp = "~=3.6"
+pendulum = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.7"
