@@ -19,6 +19,7 @@ import pendulum
 from codetiming import Timer
 from loguru import logger
 
+EXIT_ENVVAR_MISSING = 1
 JSON_DUMPS_INDENT = 2  # intendation width for stringified JSON in spaces
 
 # Configure logging
@@ -69,7 +70,12 @@ def dataframe_to_json(df):
 async def request_weather_forecast(
     session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw
 ):
-    origin = os.getenv("UC1D_WEATHER_API_ORIGIN")  # TODO throw if not set
+    try:
+        origin = os.environ["UC1D_WEATHER_API_ORIGIN"]
+    except KeyError as e:
+        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+        sys.exit(EXIT_ENVVAR_MISSING)
+
     href = f"{origin}/weather-stations/{station_id}/forecast"
 
     async with session.get(href, params=params) as res:
@@ -86,7 +92,12 @@ async def request_simulation(
     """Request simulation by POSTing to `/experiments`."""
 
     id = body["modelInstanceID"]
-    origin = os.getenv("UC1D_SIMAAS_ORIGIN")  # TODO throw if not set
+    try:
+        origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+    except KeyError as e:
+        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+        sys.exit(EXIT_ENVVAR_MISSING)
+
     href = f"{origin}/experiments"
     logger.debug(f"POST {href}")
 
