@@ -37,6 +37,7 @@ def timeseries_array_as_df(body: dict):
         tmp = tmp.set_index("timestamp")
         tmp[f"{result['label']}_unit"] = result["unit"]
         tmp.rename(columns={"value": result["label"]}, inplace=True)
+        tmp.sort_values("timestamp", axis="index", inplace=True)
         logger.trace(f"tmp\n{tmp}")
 
         tmp_dfs.append(tmp)
@@ -221,7 +222,8 @@ async def weather_forecasts_as_df(start: int, end: int):
         ids.append(str(id))
         frames.append(timeseries_array_as_df(body))
 
-    df = pd.concat(frames, keys=ids)
+    df = pd.concat(frames, keys=ids, names=["model-run", "timestamp"])
+    df.sort_values(by=["model-run", "timestamp"], axis="index", inplace=True)
     logger.trace(f"df\n{df}")
 
     return df
@@ -240,8 +242,12 @@ async def get_simulation_request_bodies():
     outfile = f"/home/moritz/work/projekte/designetz/software/simaas/demo/weather_forecast.csv"
     if os.getenv("UC1D_WEATHER_FROM_DISK", "false") == "true":
         # Alternatively, load weather data from disk to save time during development
-        df = pd.read_csv(outfile, index_col=[0, 1], parse_dates=["timestamp"])
-        df.index
+        df = pd.read_csv(
+            outfile,
+            index_col=[0, 1],
+            parse_dates=["timestamp"],
+        )
+        df.sort_values(by=["model-run", "timestamp"], axis="index", inplace=True)
     else:
         df = await weather_forecasts_as_df(start, end)
         df.to_csv(outfile, quoting=csv.QUOTE_NONNUMERIC)
