@@ -106,11 +106,11 @@ async def request_weather_forecast(
 
 
 async def request_simulation(
-    session: aiohttp.ClientSession, body: dict, q: asyncio.Queue
+    session: aiohttp.ClientSession, id: str, body: dict, q: asyncio.Queue
 ):
     """Request simulation by POSTing to `/experiments`."""
 
-    id = body["modelInstanceID"]
+    iid = body["modelInstanceID"]
     req_id = str(uuid.uuid4())
     try:
         origin = os.environ["UC1D_SIMAAS_ORIGIN"]
@@ -120,7 +120,7 @@ async def request_simulation(
 
     href = f"{origin}/experiments"
     headers = {"X-Request-Id": req_id}
-    logger.info(f"Requesting simulation of model instance <{id}>...")
+    logger.info(f"Requesting simulation of model instance <{iid}>...")
     logger.debug(f"POST {href}")
 
     # Trigger simulation and wait for 201
@@ -129,7 +129,7 @@ async def request_simulation(
         logger.debug(f"Location: {href_location}")
 
         # Enqueue link to resource just created
-        await q.put((req_id, href_location))
+        await q.put((id, req_id, href_location))
 
 
 async def poll_until_done(
@@ -142,7 +142,7 @@ async def poll_until_done(
 
     while True:
         # Retrieve first item from queue
-        req_id, href = await q1.get()
+        id, req_id, href = await q1.get()
         headers = {"X-Request-Id": req_id}
 
         # Poll status of simulation
@@ -166,7 +166,7 @@ async def poll_until_done(
                 await asyncio.sleep(freq)
 
         # Enqueue link to result
-        await q2.put((req_id, href_result))
+        await q2.put((id, req_id, href_result))
 
         # Indicate that a formerly enqueued task is complete
         q1.task_done()
@@ -177,7 +177,7 @@ async def fetch_simulation_result(session: aiohttp.ClientSession, q: asyncio.Que
 
     while True:
         # Retrieve first item from queue
-        req_id, href = await q.get()
+        id, req_id, href = await q.get()
         headers = {"X-Request-Id": req_id}
 
         # Get simulation result
@@ -328,7 +328,7 @@ async def ensemble_forecast():
     q_res = asyncio.Queue()
 
     requesting = [
-        asyncio.create_task(request_simulation(session, body, q_sim))
+        asyncio.create_task(request_simulation(session, id, body, q_sim))
         for id, body in sim_req_bodies.items()
     ]
     polling = [
