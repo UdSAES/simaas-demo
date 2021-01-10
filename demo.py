@@ -376,4 +376,27 @@ if __name__ == "__main__":
     # Assemble all simulation results in a MultiIndex-dataframe
     df = list_of_tuples_to_df(q_repr_all)
 
+    # Create and show very simple plot
+    logger.info("Creating and showing simple run plot of ensemble forecast...")
+    ids = []
+    frames = []
+    key = "powerDC"
+    for run in df.index.levels[0]:
+        ids.append(run)
+        frames.append(df.xs(run)[key])
+
+    df1 = pd.concat(frames, axis=1, keys=ids)
+    df1 = df1.sort_index(axis="columns")
+
+    with pd.option_context("display.max_rows", None, "display.max_columns", None):
+        logger.trace(f"df1\n{df1}")
+
+    import matplotlib.pyplot as plt
+
+    plt.close("all")
+    df1.plot(figsize=(16, 9))
+    plt.show()
+
+    logger.info("Done!")
+
 
