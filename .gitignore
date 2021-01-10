@@ -1,2 +1,3 @@
 # Ignore specific files
+weather_forecast.csv
 .env

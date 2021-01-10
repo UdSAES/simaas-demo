@@ -237,11 +237,14 @@ async def get_simulation_request_bodies():
     output_interval = 900
 
     # Fetch weather forecasts and store in MultiIndex-dataframe
-    df = await weather_forecasts_as_df(start, end)
-
-    # outfile = f"/home/moritz/work/projekte/designetz/software/simaas/demo/outfile.csv"
-    # df.to_csv(outfile, quoting=csv.QUOTE_NONNUMERIC)
-    # df = pd.read_csv(outfile, index_col=[0, 1])
+    outfile = f"/home/moritz/work/projekte/designetz/software/simaas/demo/weather_forecast.csv"
+    if os.getenv("UC1D_WEATHER_FROM_DISK", "false") == "true":
+        # Alternatively, load weather data from disk to save time during development
+        df = pd.read_csv(outfile, index_col=[0, 1], parse_dates=["timestamp"])
+        df.index
+    else:
+        df = await weather_forecasts_as_df(start, end)
+        df.to_csv(outfile, quoting=csv.QUOTE_NONNUMERIC)
 
     logger.debug(f"df\n{df}")
 
