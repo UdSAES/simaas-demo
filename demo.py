@@ -12,6 +12,7 @@ import csv
 import json
 import os
 import sys
+import uuid
 
 import aiohttp
 import pandas as pd
@@ -96,6 +97,7 @@ async def request_simulation(
     """Request simulation by POSTing to `/experiments`."""
 
     id = body["modelInstanceID"]
+    req_id = str(uuid.uuid4())
     try:
         origin = os.environ["UC1D_SIMAAS_ORIGIN"]
     except KeyError as e:
@@ -103,16 +105,17 @@ async def request_simulation(
         sys.exit(EXIT_ENVVAR_MISSING)
 
     href = f"{origin}/experiments"
+    headers = {"X-Request-Id": req_id}
     logger.info(f"Requesting simulation of model instance <{id}>...")
     logger.debug(f"POST {href}")
 
     # Trigger simulation and wait for 201
-    async with session.post(href, json=body) as res:
+    async with session.post(href, json=body, headers=headers) as res:
         href_location = res.headers["Location"]
         logger.debug(f"Location: {href_location}")
 
         # Enqueue link to resource just created
-        await q.put((id, href_location))
+        await q.put((req_id, href_location))
 
 
 async def poll_until_done(
@@ -125,14 +128,15 @@ async def poll_until_done(
 
     while True:
         # Retrieve first item from queue
-        id, href = await q1.get()
+        req_id, href = await q1.get()
+        headers = {"X-Request-Id": req_id}
 
         # Poll status of simulation
         counter = 0
         href_result = None
         while counter < counter_max:
             logger.debug(f"GET {href}")
-            async with session.get(href) as res:
+            async with session.get(href, headers=headers) as res:
                 rep = await res.json()
                 status = rep["status"]
                 logger.debug(f"    {status}")
@@ -148,7 +152,7 @@ async def poll_until_done(
                 await asyncio.sleep(freq)
 
         # Enqueue link to result
-        await q2.put((id, href_result))
+        await q2.put((req_id, href_result))
 
         # Indicate that a formerly enqueued task is complete
         q1.task_done()
@@ -159,11 +163,12 @@ async def fetch_simulation_result(session: aiohttp.ClientSession, q: asyncio.Que
 
     while True:
         # Retrieve first item from queue
-        id, href = await q.get()
+        req_id, href = await q.get()
+        headers = {"X-Request-Id": req_id}
 
         # Get simulation result
         logger.debug(f"GET {href}")
-        async with session.get(href) as res:
+        async with session.get(href, headers=headers) as res:
             rep = await res.json()
             # logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
