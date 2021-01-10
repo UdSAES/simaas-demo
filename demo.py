@@ -69,6 +69,20 @@ def dataframe_to_json(df):
     return ts_value_objects
 
 
+def list_of_tuples_to_df(list_of_tuples):
+    ids = []
+    frames = []
+    for id, body in list_of_tuples:
+        ids.append(str(id))
+        frames.append(timeseries_array_as_df(body))
+
+    df = pd.concat(frames, keys=ids, names=["model-run", "timestamp"])
+    df.sort_values(by=["model-run", "timestamp"], axis="index", inplace=True)
+    logger.trace(f"df\n{df}")
+
+    return df
+
+
 async def request_weather_forecast(
     session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw
 ):
@@ -221,15 +235,7 @@ async def weather_forecasts_as_df(start: int, end: int):
         await asyncio.gather(*weather_forecasts)
 
     # Append all elements in list to dataframe
-    ids = []
-    frames = []
-    for id, body in q_nwp:
-        ids.append(str(id))
-        frames.append(timeseries_array_as_df(body))
-
-    df = pd.concat(frames, keys=ids, names=["model-run", "timestamp"])
-    df.sort_values(by=["model-run", "timestamp"], axis="index", inplace=True)
-    logger.trace(f"df\n{df}")
+    df = list_of_tuples_to_df(q_nwp)
 
     return df
 
