@@ -361,8 +361,7 @@ async def ensemble_forecast():
 
     await session.close()
 
-    # Assemble all simulation results in a MultiIndex-dataframe
-    df = list_of_tuples_to_df(q_repr_all)
+    return q_repr_all
 
 
 if __name__ == "__main__":
@@ -372,5 +371,9 @@ if __name__ == "__main__":
     )
 
     with timer_overall:
-        asyncio.run(ensemble_forecast())
+        q_repr_all = asyncio.run(ensemble_forecast())
+
+    # Assemble all simulation results in a MultiIndex-dataframe
+    df = list_of_tuples_to_df(q_repr_all)
+
 
