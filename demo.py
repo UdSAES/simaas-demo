@@ -77,6 +77,9 @@ async def request_weather_forecast(
         sys.exit(EXIT_ENVVAR_MISSING)
 
     href = f"{origin}/weather-stations/{station_id}/forecast"
+    logger.debug(
+        f"Requesting model run {params['model-run']} of {params['model'].upper()}-model for station {station_id}..."
+    )
 
     async with session.get(href, params=params) as res:
         logger.trace(f"GET {res.url}")
@@ -99,14 +102,13 @@ async def request_simulation(
         sys.exit(EXIT_ENVVAR_MISSING)
 
     href = f"{origin}/experiments"
+    logger.info(f"Requesting simulation of model instance <{id}>...")
     logger.debug(f"POST {href}")
 
     # Trigger simulation and wait for 201
     async with session.post(href, json=body) as res:
         href_location = res.headers["Location"]
         logger.debug(f"Location: {href_location}")
-
-        logger.info(f"Requested simulation of model instance <{id}>")
 
         # Enqueue link to resource just created
         await q.put((id, href_location))
@@ -128,11 +130,11 @@ async def poll_until_done(
         counter = 0
         href_result = None
         while counter < counter_max:
-            logger.trace(f"GET {href}")
+            logger.debug(f"GET {href}")
             async with session.get(href) as res:
                 rep = await res.json()
                 status = rep["status"]
-                logger.trace(f"    {status}")
+                logger.debug(f"    {status}")
 
                 if status == "DONE":
                     href_result = rep["linkToResult"]
