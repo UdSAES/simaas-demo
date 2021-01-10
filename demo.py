@@ -84,7 +84,7 @@ def list_of_tuples_to_df(list_of_tuples):
 
 
 async def request_weather_forecast(
-    session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw
+    session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw: list
 ):
     try:
         origin = os.environ["UC1D_WEATHER_API_ORIGIN"]
@@ -186,7 +186,7 @@ async def fetch_simulation_result(
         logger.debug(f"GET {href}")
         async with session.get(href, headers=headers) as res:
             rep = await res.json()
-            # logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
+            logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
             # FIXME workaround for representation that doesn't comply with the spec
             rep["data"] = rep["result"]
@@ -328,9 +328,11 @@ async def ensemble_forecast():
 
     ensemble_runs_total = len(sim_req_bodies)
 
-    # Spawn client session, task queues, producer and workers
+    # Get all simulation results and enqueue the representations for post-processing
     q_repr_all = []
     session = aiohttp.ClientSession()
+
+    # Spawn task queues, producer and workers
     q_sim = asyncio.Queue()
     q_res = asyncio.Queue()
 
@@ -361,6 +363,7 @@ async def ensemble_forecast():
 
     # Assemble all simulation results in a MultiIndex-dataframe
     df = list_of_tuples_to_df(q_repr_all)
+
 
 if __name__ == "__main__":
     timer_overall = Timer(
