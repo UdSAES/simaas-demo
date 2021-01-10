@@ -172,7 +172,9 @@ async def poll_until_done(
         q1.task_done()
 
 
-async def fetch_simulation_result(session: aiohttp.ClientSession, q: asyncio.Queue):
+async def fetch_simulation_result(
+    session: aiohttp.ClientSession, q: asyncio.Queue, q_repr_all: list
+):
     """Get the simulation result and parse it as dataframe."""
 
     while True:
@@ -186,8 +188,12 @@ async def fetch_simulation_result(session: aiohttp.ClientSession, q: asyncio.Que
             rep = await res.json()
             # logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
-        # # Parse as dataframe
-        logger.info(f"Result of simulation ~~added to dataframe~~ _dropped_")
+            # FIXME workaround for representation that doesn't comply with the spec
+            rep["data"] = rep["result"]
+            del rep["result"]
+
+            # Enqueue for post-processing
+            q_repr_all.append((id, rep))
 
         # Indicate that a formerly enqueued task is complete
         q.task_done()
@@ -323,6 +329,7 @@ async def ensemble_forecast():
     ensemble_runs_total = len(sim_req_bodies)
 
     # Spawn client session, task queues, producer and workers
+    q_repr_all = []
     session = aiohttp.ClientSession()
     q_sim = asyncio.Queue()
     q_res = asyncio.Queue()
@@ -336,7 +343,7 @@ async def ensemble_forecast():
         for n in range(ensemble_runs_total)
     ]
     fetching = [
-        asyncio.create_task(fetch_simulation_result(session, q_res))
+        asyncio.create_task(fetch_simulation_result(session, q_res, q_repr_all))
         for n in range(ensemble_runs_total)
     ]
 
@@ -352,6 +359,8 @@ async def ensemble_forecast():
 
     await session.close()
 
+    # Assemble all simulation results in a MultiIndex-dataframe
+    df = list_of_tuples_to_df(q_repr_all)
 
 if __name__ == "__main__":
     timer_overall = Timer(
