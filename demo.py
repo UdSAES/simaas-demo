@@ -121,12 +121,12 @@ async def request_simulation(
     href = f"{origin}/experiments"
     headers = {"X-Request-Id": req_id}
     logger.info(f"Requesting simulation of model instance <{iid}>...")
-    logger.debug(f"POST {href}")
+    logger.trace(f"POST {href}")
 
     # Trigger simulation and wait for 201
     async with session.post(href, json=body, headers=headers) as res:
         href_location = res.headers["Location"]
-        logger.debug(f"Location: {href_location}")
+        logger.trace(f"Location: {href_location}")
 
         # Enqueue link to resource just created
         await q.put((id, req_id, href_location))
@@ -149,11 +149,13 @@ async def poll_until_done(
         counter = 0
         href_result = None
         while counter < counter_max:
-            logger.debug(f"GET {href}")
+            logger.trace(f"GET {href}")
             async with session.get(href, headers=headers) as res:
                 rep = await res.json()
                 status = rep["status"]
-                logger.debug(f"    {status}")
+                logger.debug(
+                    f"Polling status of simulation for model run {id}: {status}"
+                )
 
                 if status == "DONE":
                     href_result = rep["linkToResult"]
@@ -183,8 +185,9 @@ async def fetch_simulation_result(
         headers = {"X-Request-Id": req_id}
 
         # Get simulation result
-        logger.debug(f"GET {href}")
+        logger.info(f"Retrieving result of simulation for model run {id}")
         async with session.get(href, headers=headers) as res:
+            logger.trace(f"GET {href}")
             rep = await res.json()
             logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
@@ -248,12 +251,16 @@ async def weather_forecasts_as_df(start: int, end: int):
 
 async def get_simulation_request_bodies():
     period = pendulum.period(
-        pendulum.datetime(2018, 11, 17).start_of("day"),
-        pendulum.datetime(2018, 11, 17).end_of("day"),
+        pendulum.datetime(2020, 4, 17).start_of("day"),
+        pendulum.datetime(2020, 4, 17).end_of("day"),
     )  # TODO make configurable
     start = int(period.start.format("x"))
     end = int(period.end.format("x"))
     output_interval = 900
+
+    logger.info(
+        f"Loading all ensemble forecasts for the time from {period.start.isoformat()} to {period.end.isoformat()}..."
+    )
 
     # Fetch weather forecasts and store in MultiIndex-dataframe
     outfile = f"/home/moritz/work/projekte/designetz/software/simaas/demo/weather_forecast.csv"
@@ -269,7 +276,8 @@ async def get_simulation_request_bodies():
         df = await weather_forecasts_as_df(start, end)
         df.to_csv(outfile, quoting=csv.QUOTE_NONNUMERIC)
 
-    logger.debug(f"df\n{df}")
+    with pd.option_context("display.max_rows", None):
+        logger.trace(f"df\n{df}")
 
     # Construct request bodies from dataframe
     bc = {}
@@ -350,6 +358,7 @@ async def ensemble_forecast():
     ]
 
     # Await addition of all tasks to the first queue
+    logger.info("Awaiting the completion of all simulations...")
     await asyncio.gather(*requesting)
 
     # Wait until the queues are fully processed; then cancel worker tasks&close session
