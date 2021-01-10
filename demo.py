@@ -187,10 +187,12 @@ async def weather_forecasts_as_df(start: int, end: int):
         "aswdifd_s",
         "ws_10m",
     ]
+    api_token = os.getenv("UC1D_WEATHER_API_JWT")
 
     # Get ensemble forecast for weather at a DWD weather station; put data into queue
     q_nwp = []
-    async with aiohttp.ClientSession() as session:
+    headers = {"Authorization": f"Bearer {api_token}"} if api_token else None
+    async with aiohttp.ClientSession(headers=headers) as session:
         weather_forecasts = [
             asyncio.create_task(
                 request_weather_forecast(
