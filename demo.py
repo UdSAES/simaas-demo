@@ -204,7 +204,16 @@ async def weather_forecasts_as_df(start: int, end: int):
     model_runs = (
         ["03", "09", "15", "21"]
         if model.upper() == "MOSMIX"
-        else ["00", "03", "06", "09", "12", "15", "18", "21"]
+        else [
+            "00",
+            "03",
+            "06",
+            "09",
+            "12",
+            "15",
+            "18",
+            "21",
+        ]
     )
     quantities = [
         "t_2m",
@@ -322,7 +331,7 @@ async def get_simulation_request_bodies():
 async def ensemble_forecast():
     """Execute ensemble forecast and represent as dataframe."""
 
-    # Assemble data used as input for simulations
+    # Assemble data used as input for simulations ######################################
     timer_wfc = Timer(
         text="Overall duration for preparing weather forecasts: {:.2f} seconds",
         logger=logger.info,
@@ -332,7 +341,7 @@ async def ensemble_forecast():
 
     ensemble_runs_total = len(sim_req_bodies)
 
-    # Get all simulation results and enqueue the representations for post-processing
+    # Get all simulation results and enqueue the representations for post-processing ###
     q_repr_all = []
     session = aiohttp.ClientSession()
 
