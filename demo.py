@@ -154,7 +154,7 @@ async def poll_until_done(
                 rep = await res.json()
                 status = rep["status"]
                 logger.debug(
-                    f"Polling status of simulation for model run {id}: {status}"
+                    f"Polling status of simulation for model run '{id:2d}': {status}"
                 )
 
                 if status == "DONE":
@@ -185,7 +185,7 @@ async def fetch_simulation_result(
         headers = {"X-Request-Id": req_id}
 
         # Get simulation result
-        logger.info(f"Retrieving result of simulation for model run {id}")
+        logger.info(f"Retrieving result of simulation for model run '{id:2d}'")
         async with session.get(href, headers=headers) as res:
             logger.trace(f"GET {href}")
             rep = await res.json()
