@@ -191,10 +191,6 @@ async def fetch_simulation_result(
             rep = await res.json()
             logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
-            # FIXME workaround for representation that doesn't comply with the spec
-            rep["data"] = rep["result"]
-            del rep["result"]
-
             # Enqueue for post-processing
             q_repr_all.append((id, rep))
 
