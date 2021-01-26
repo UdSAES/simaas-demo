@@ -18,6 +18,7 @@ import aiohttp
 import pandas as pd
 import pendulum
 from codetiming import Timer
+from invoke import task
 from loguru import logger
 
 EXIT_ENVVAR_MISSING = 1
@@ -254,7 +255,8 @@ async def weather_forecasts_as_df(start: int, end: int):
     return df
 
 
-async def get_simulation_request_bodies():
+@task
+async def get_simulation_request_bodies(ctx):
     period = pendulum.period(
         pendulum.datetime(2020, 4, 17).start_of("day"),
         pendulum.datetime(2020, 4, 17).end_of("day"),
@@ -376,7 +378,8 @@ async def ensemble_forecast():
     return q_repr_all
 
 
-if __name__ == "__main__":
+@task
+def demo_efc(ctx):
     timer_overall = Timer(
         text="Overall duration for running ensemble forecast: {:.2f} seconds",
         logger=logger.info,
