@@ -294,7 +294,6 @@ async def get_simulation_request_bodies():
 
         # Create request-body
         request_body = {
-            # "modelInstanceID": "c02f1f12-966d-4eab-9f21-dcf265ceac71",
             "modelInstanceID": "29f11d50-f11e-46e7-ba2f-7d69f796a101",
             "simulationParameters": {
                 "startTime": start,
@@ -302,7 +301,6 @@ async def get_simulation_request_bodies():
                 "outputInterval": output_interval,
             },
             "inputTimeseries": [],
-            "startValues": {"plantModel.epochOffset": start / 1000},
         }
 
         # Update request_body with timeserieses of temp_air, irr_diffuse and irr_direct
