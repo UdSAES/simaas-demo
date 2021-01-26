@@ -30,6 +30,7 @@ logger.remove()
 logger.add(sys.stdout, level=log_level, diagnose=True, backtrace=False, enqueue=True)
 
 
+# Utility functions ####################################################################
 def timeseries_array_as_df(body: dict):
     """Parse timeseries-objects as pd.DataFrame."""
 
@@ -84,6 +85,7 @@ def list_of_tuples_to_df(list_of_tuples):
     return df
 
 
+# Get (fake) ensemble weather forecast #################################################
 async def request_weather_forecast(
     session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw: list
 ):
@@ -104,99 +106,6 @@ async def request_weather_forecast(
         logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
         wfc_raw.append((params["model-run"], rep))
-
-
-async def request_simulation(
-    session: aiohttp.ClientSession, id: str, body: dict, q: asyncio.Queue
-):
-    """Request simulation by POSTing to `/experiments`."""
-
-    iid = body["modelInstanceID"]
-    req_id = str(uuid.uuid4())
-    try:
-        origin = os.environ["UC1D_SIMAAS_ORIGIN"]
-    except KeyError as e:
-        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
-        sys.exit(EXIT_ENVVAR_MISSING)
-
-    href = f"{origin}/experiments"
-    headers = {"X-Request-Id": req_id}
-    logger.info(f"Requesting simulation of model instance <{iid}>...")
-    logger.trace(f"POST {href}")
-
-    # Trigger simulation and wait for 201
-    async with session.post(href, json=body, headers=headers) as res:
-        href_location = res.headers["Location"]
-        logger.trace(f"Location: {href_location}")
-
-        # Enqueue link to resource just created
-        await q.put((id, req_id, href_location))
-
-
-async def poll_until_done(
-    session: aiohttp.ClientSession, q1: asyncio.Queue, q2: asyncio.Queue
-):
-    """Poll specific experiment until it's done or failed."""
-
-    counter_max = int(os.getenv("UC1D_POLLING_RETRIES", "30"))
-    freq = float(os.getenv("UC1D_POLLING_FREQUENCY", "0.1"))
-
-    while True:
-        # Retrieve first item from queue
-        id, req_id, href = await q1.get()
-        headers = {"X-Request-Id": req_id}
-
-        # Poll status of simulation
-        counter = 0
-        href_result = None
-        while counter < counter_max:
-            logger.trace(f"GET {href}")
-            async with session.get(href, headers=headers) as res:
-                rep = await res.json()
-                status = rep["status"]
-                logger.debug(
-                    f"Polling status of simulation for model run '{id:2d}': {status}"
-                )
-
-                if status == "DONE":
-                    href_result = rep["linkToResult"]
-                    break
-                if status == "FAILED":
-                    logger.warning("Simulation failed")
-                    break
-
-                counter += 1
-                await asyncio.sleep(freq)
-
-        # Enqueue link to result
-        await q2.put((id, req_id, href_result))
-
-        # Indicate that a formerly enqueued task is complete
-        q1.task_done()
-
-
-async def fetch_simulation_result(
-    session: aiohttp.ClientSession, q: asyncio.Queue, q_repr_all: list
-):
-    """Get the simulation result and parse it as dataframe."""
-
-    while True:
-        # Retrieve first item from queue
-        id, req_id, href = await q.get()
-        headers = {"X-Request-Id": req_id}
-
-        # Get simulation result
-        logger.info(f"Retrieving result of simulation for model run '{id:2d}'")
-        async with session.get(href, headers=headers) as res:
-            logger.trace(f"GET {href}")
-            rep = await res.json()
-            logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
-
-            # Enqueue for post-processing
-            q_repr_all.append((id, rep))
-
-        # Indicate that a formerly enqueued task is complete
-        q.task_done()
 
 
 async def weather_forecasts_as_df(start: int, end: int):
@@ -328,6 +237,102 @@ async def get_simulation_request_bodies(ctx):
     return bc
 
 
+# Asynchronously request simulations to run and await results ##########################
+async def request_simulation(
+    session: aiohttp.ClientSession, id: str, body: dict, q: asyncio.Queue
+):
+    """Request simulation by POSTing to `/experiments`."""
+
+    iid = body["modelInstanceID"]
+    req_id = str(uuid.uuid4())
+    try:
+        origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+    except KeyError as e:
+        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+        sys.exit(EXIT_ENVVAR_MISSING)
+
+    href = f"{origin}/experiments"
+    headers = {"X-Request-Id": req_id}
+
+    logger.info(f"Requesting simulation of model instance <{iid}>...")
+    logger.trace(f"POST {href}")
+
+    # Trigger simulation and wait for 201
+    async with session.post(href, json=body, headers=headers) as res:
+        href_location = res.headers["Location"]
+        logger.trace(f"Location: {href_location}")
+
+        # Enqueue link to resource just created
+        await q.put((id, req_id, href_location))
+
+
+async def poll_until_done(
+    session: aiohttp.ClientSession, q1: asyncio.Queue, q2: asyncio.Queue
+):
+    """Poll specific experiment until it's done or failed."""
+
+    counter_max = int(os.getenv("UC1D_POLLING_RETRIES", "30"))
+    freq = float(os.getenv("UC1D_POLLING_FREQUENCY", "0.1"))
+
+    while True:
+        # Retrieve first item from queue
+        id, req_id, href = await q1.get()
+        headers = {"X-Request-Id": req_id}
+
+        # Poll status of simulation
+        counter = 0
+        href_result = None
+        while counter < counter_max:
+            logger.trace(f"GET {href}")
+            async with session.get(href, headers=headers) as res:
+                rep = await res.json()
+                status = rep["status"]
+                logger.debug(
+                    f"Polling status of simulation for model run '{id:2d}': {status}"
+                )
+
+                if status == "DONE":
+                    href_result = rep["linkToResult"]
+                    break
+                if status == "FAILED":
+                    logger.warning("Simulation failed")
+                    break
+
+                counter += 1
+                await asyncio.sleep(freq)
+
+        # Enqueue link to result
+        await q2.put((id, req_id, href_result))
+
+        # Indicate that a formerly enqueued task is complete
+        q1.task_done()
+
+
+async def fetch_simulation_result(
+    session: aiohttp.ClientSession, q: asyncio.Queue, q_repr_all: list
+):
+    """Get the simulation result and parse it as dataframe."""
+
+    while True:
+        # Retrieve first item from queue
+        id, req_id, href = await q.get()
+        headers = {"X-Request-Id": req_id}
+
+        # Get simulation result
+        logger.info(f"Retrieving result of simulation for model run '{id:2d}'")
+        async with session.get(href, headers=headers) as res:
+            logger.trace(f"GET {href}")
+            rep = await res.json()
+            logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
+
+            # Enqueue for post-processing
+            q_repr_all.append((id, rep))
+
+        # Indicate that a formerly enqueued task is complete
+        q.task_done()
+
+
+# Demo 1: many simulations of the same model instance ##################################
 async def ensemble_forecast():
     """Execute ensemble forecast and represent as dataframe."""
 
