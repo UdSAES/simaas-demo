@@ -305,7 +305,7 @@ async def get_simulation_request_bodies(ctx):
             "inputTimeseries": [],
         }
 
-        # Update request_body with timeserieses of temp_air, irr_diffuse and irr_direct
+        # Update request_body with timeseries of temp_air, irr_diffuse and irr_direct
         map = {
             "t_2m": "temperature",
             "aswdir_s": "directHorizontalIrradiance",
@@ -413,5 +413,3 @@ def demo_efc(ctx):
     plt.show()
 
     logger.info("Done!")
-
-
