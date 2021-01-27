@@ -11,13 +11,16 @@ import asyncio
 import csv
 import json
 import os
+import random
 import sys
 import uuid
 
 import aiohttp
 import pandas as pd
 import pendulum
+import scipy.io as sio
 from codetiming import Timer
+from deap import base, creator, tools
 from invoke import task
 from loguru import logger
 
@@ -431,3 +434,116 @@ def demo_efc(ctx):
     plt.show()
 
     logger.info("Done!")
+
+
+# Demo 2: simulation of many new model instances #######################################
+async def evaluate_generation(evaluate, generation):
+    """Asynchronously evaluate fitness for each individual in generation."""
+
+    # Create model instances for all individuals; retrieve their URLs
+
+    # Assemble hrefs and request bodies for simulation of individuals
+
+    # Await the completion of all simulations in collection
+
+    # Represent all simulation results as dataframe
+
+    # Amend each individual by its fitness value
+    for ind in generation:
+        ind.fitness.values = (random.random(),)  # MUST assign tuple!
+
+
+async def genetic_algorithm():
+    """
+    Use genetic algorithm to solve component selection problem.
+
+    https://www.edn.com/genetic-algorithm-solves-thermistor-network-component-values
+    https://de.mathworks.com/videos/optimal-component-selection-using-the-mixed-integer-
+    genetic-algorithm-68956.html
+
+    https://deap.readthedocs.io/en/master/overview.html
+    """
+
+    # Load possible component parameters from disk
+    r_res = possible_values["Res"]
+    th_res = possible_values["ThVal"]
+    th_beta = possible_values["ThBeta"]
+
+    # Set up genetic algorithm and its parameters ######################################
+
+    # Generate individuals that match problem representation
+    def gen_idx():
+        (n, n_min, n_max, m, m_min, m_max, o, o_min, o_max) = (
+            4,
+            0,
+            len(r_res) - 1,
+            2,
+            0,
+            len(th_res) - 1,
+            2,
+            0,
+            len(th_beta) - 1,
+        )
+        a = [random.randint(n_min, n_max) for i in range(n)]
+        b = [random.randint(m_min, m_max) for i in range(m)]
+        c = [random.randint(o_min, o_max) for i in range(o)]
+
+        return a + b + c
+
+    # Specify type of problem and each individual
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.FitnessMin)
+
+    # Initialize first generation at random
+    toolbox = base.Toolbox()
+    toolbox.register(
+        "individual",
+        tools.initIterate,
+        creator.Individual,
+        gen_idx,
+    )
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+    # Register the genetic operators to use
+    toolbox.register("evaluate", evaluate_individual)
+    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("mate", tools.cxTwoPoint)
+    toolbox.register("mutate", tools.mutFlipBit, indpb=MUTPB)
+
+    # Instantiate and evaluate the first generation
+    pop = toolbox.population(n=IND_SIZE)
+
+    await evaluate_generation(toolbox.evaluate, pop)
+
+    for g in range(NGEN):
+        logger.info(f"Generation {g}")
+
+        # Select the next generation individuals
+        offspring = toolbox.select(pop, len(pop))
+
+        # Clone the selected individuals
+        offspring = list(map(toolbox.clone, offspring))
+
+        # Apply crossover and mutation on the offspring
+        for child1, child2 in zip(offspring[::2], offspring[1::2]):
+            if random.random() < CXPB:
+                toolbox.mate(child1, child2)
+                del child1.fitness.values
+                del child2.fitness.values
+
+        for mutant in offspring:
+            if random.random() < MUTPB:
+                toolbox.mutate(mutant)
+                del mutant.fitness.values
+
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        await evaluate_generation(toolbox.evaluate, invalid_ind)
+
+        # The population is entirely replaced by the offspring
+        pop[:] = offspring
+
+
+@task
+def demo_ga(ctx):
+    asyncio.run(genetic_algorithm())
