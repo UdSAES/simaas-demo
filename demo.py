@@ -164,8 +164,7 @@ async def weather_forecasts_as_df(start: int, end: int):
     return df
 
 
-@task
-async def get_simulation_request_bodies(ctx):
+async def get_simulation_request_bodies():
     period = pendulum.period(
         pendulum.datetime(2020, 4, 17).start_of("day"),
         pendulum.datetime(2020, 4, 17).end_of("day"),
@@ -197,6 +196,15 @@ async def get_simulation_request_bodies(ctx):
 
     # Construct request bodies from dataframe
     bc = {}
+
+    try:
+        origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+    except KeyError as e:
+        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+        sys.exit(EXIT_ENVVAR_MISSING)
+
+    href = f"{origin}/experiments"
+
     for model_run in df.index.levels[0]:
         tmp = df.loc[model_run]
         tmp = tmp.interpolate()
@@ -230,7 +238,10 @@ async def get_simulation_request_bodies(ctx):
                 }
             )
 
-        bc[model_run] = request_body
+        bc[model_run] = {
+            "href": href,
+            "body": request_body,
+        }
 
     logger.trace(json.dumps(bc, indent=JSON_DUMPS_INDENT))
 
@@ -239,19 +250,12 @@ async def get_simulation_request_bodies(ctx):
 
 # Asynchronously request simulations to run and await results ##########################
 async def request_simulation(
-    session: aiohttp.ClientSession, id: str, body: dict, q: asyncio.Queue
+    session: aiohttp.ClientSession, id: str, href: str, body: dict, q: asyncio.Queue
 ):
-    """Request simulation by POSTing to `/experiments`."""
+    """Request simulation by POSTing `body` to given `href`."""
 
     iid = body["modelInstanceID"]
     req_id = str(uuid.uuid4())
-    try:
-        origin = os.environ["UC1D_SIMAAS_ORIGIN"]
-    except KeyError as e:
-        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
-        sys.exit(EXIT_ENVVAR_MISSING)
-
-    href = f"{origin}/experiments"
     headers = {"X-Request-Id": req_id}
 
     logger.info(f"Requesting simulation of model instance <{iid}>...")
@@ -342,9 +346,9 @@ async def ensemble_forecast():
         logger=logger.info,
     )
     with timer_wfc:
-        sim_req_bodies = await get_simulation_request_bodies()
+        dict_id_href_body = await get_simulation_request_bodies()
 
-    ensemble_runs_total = len(sim_req_bodies)
+    ensemble_runs_total = len(dict_id_href_body)
 
     # Get all simulation results and enqueue the representations for post-processing ###
     q_repr_all = []
@@ -355,8 +359,10 @@ async def ensemble_forecast():
     q_res = asyncio.Queue()
 
     requesting = [
-        asyncio.create_task(request_simulation(session, id, body, q_sim))
-        for id, body in sim_req_bodies.items()
+        asyncio.create_task(
+            request_simulation(session, id, r["href"], r["body"], q_sim)
+        )
+        for id, r in dict_id_href_body.items()
     ]
     polling = [
         asyncio.create_task(poll_until_done(session, q_sim, q_res))
