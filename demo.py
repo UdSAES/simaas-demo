@@ -336,21 +336,10 @@ async def fetch_simulation_result(
         q.task_done()
 
 
-# Demo 1: many simulations of the same model instance ##################################
-async def ensemble_forecast():
-    """Execute ensemble forecast and represent as dataframe."""
+async def await_collection_of_simulatons(dict_id_href_body: dict):
+    count_simulations_total = len(dict_id_href_body)
 
-    # Assemble data used as input for simulations ######################################
-    timer_wfc = Timer(
-        text="Overall duration for preparing weather forecasts: {:.2f} seconds",
-        logger=logger.info,
-    )
-    with timer_wfc:
-        dict_id_href_body = await get_simulation_request_bodies()
-
-    ensemble_runs_total = len(dict_id_href_body)
-
-    # Get all simulation results and enqueue the representations for post-processing ###
+    # Get all simulation results and enqueue the representations for post-processing
     q_repr_all = []
     session = aiohttp.ClientSession()
 
@@ -366,11 +355,11 @@ async def ensemble_forecast():
     ]
     polling = [
         asyncio.create_task(poll_until_done(session, q_sim, q_res))
-        for n in range(ensemble_runs_total)
+        for n in range(count_simulations_total)
     ]
     fetching = [
         asyncio.create_task(fetch_simulation_result(session, q_res, q_repr_all))
-        for n in range(ensemble_runs_total)
+        for n in range(count_simulations_total)
     ]
 
     # Await addition of all tasks to the first queue
@@ -385,6 +374,24 @@ async def ensemble_forecast():
         task.cancel()
 
     await session.close()
+
+    return q_repr_all
+
+
+# Demo 1: many simulations of the same model instance ##################################
+async def ensemble_forecast():
+    """Execute ensemble forecast and represent as dataframe."""
+
+    # Assemble data used as input for simulations ######################################
+    timer_wfc = Timer(
+        text="Overall duration for preparing weather forecasts: {:.2f} seconds",
+        logger=logger.info,
+    )
+    with timer_wfc:
+        dict_id_href_body = await get_simulation_request_bodies()
+
+    # Await the completion of all simulations in collection
+    q_repr_all = await await_collection_of_simulatons(dict_id_href_body)
 
     return q_repr_all
 
