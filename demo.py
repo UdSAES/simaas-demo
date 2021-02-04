@@ -384,6 +384,7 @@ async def await_collection_of_simulatons(dict_id_href_body: dict):
 
 
 # Demo 1: many simulations of the same model instance ##################################
+@logger.catch
 async def ensemble_forecast():
     """Execute ensemble forecast and represent as dataframe."""
 
@@ -455,6 +456,7 @@ async def evaluate_generation(evaluate, generation):
         ind.fitness.values = (random.random(),)  # MUST assign tuple!
 
 
+@logger.catch
 async def genetic_algorithm():
     """
     Use genetic algorithm to solve component selection problem.
