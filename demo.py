@@ -19,6 +19,7 @@ import uuid
 import aiohttp
 import pandas as pd
 import pendulum
+import pydash
 import scipy.io as sio
 from codetiming import Timer
 from deap import base, creator, tools
@@ -543,12 +544,33 @@ async def evaluate_generation(evaluate, generation, component_values):
     logger.trace(json.dumps(dict_id_href_body, indent=JSON_DUMPS_INDENT))
 
     # Await the completion of all simulations in collection
+    q_repr_all = await await_collection_of_simulatons(dict_id_href_body)
 
     # Represent all simulation results as dataframe
+    df = list_of_tuples_to_df(q_repr_all)
+    logger.trace(f"df\n{df}")
+
+    ids = []
+    frames = []
+    key = "voltage"
+    for run in df.index.levels[0]:
+        ids.append(run)
+        frames.append(df.xs(run).set_index(df.xs(run)["tempK"])[key])
+
+    df = pd.concat(frames, axis=1, keys=ids)
+    df = df.sort_index(axis="columns")
+
+    df["tempC"] = df.index - 273.15
+    df["reference"] = 1.125e-5 * df["tempC"] ** 2 - 1.125e-4 * df["tempC"] + 1.026e-1
+
+    logger.trace(f"df\n{df}")
 
     # Amend each individual by its fitness value
     for ind in generation:
-        ind.fitness.values = (random.random(),)  # MUST assign tuple!
+        hashid = hashids.encode(*ind)
+        fitness = ((df[hashid] - df["reference"]) ** 2).mean() ** 0.5
+        ind.fitness.values = (fitness,)  # MUST assign tuple!
+        logger.debug(f"{hashid}: {ind} => {ind.fitness.values[0]}")
 
 
 @logger.catch
