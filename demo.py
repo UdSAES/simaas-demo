@@ -586,9 +586,14 @@ async def genetic_algorithm():
     """
 
     # Load possible component parameters from disk
-    r_res = possible_values["Res"]
-    th_res = possible_values["ThVal"]
-    th_beta = possible_values["ThBeta"]
+    possible_values_file = "./Thermistor_MixedIntegerGA/StandardComponentValues.mat"
+    possible_values = sio.loadmat(possible_values_file)
+
+    component_values = {
+        "r_res": possible_values["Res"],
+        "th_res": possible_values["ThVal"],
+        "th_beta": possible_values["ThBeta"],
+    }
 
     # Set up genetic algorithm and its parameters ######################################
 
@@ -597,13 +602,13 @@ async def genetic_algorithm():
         (n, n_min, n_max, m, m_min, m_max, o, o_min, o_max) = (
             4,
             0,
-            len(r_res) - 1,
+            len(component_values["r_res"]) - 1,
             2,
             0,
-            len(th_res) - 1,
+            len(component_values["th_res"]) - 1,
             2,
             0,
-            len(th_beta) - 1,
+            len(component_values["th_beta"]) - 1,
         )
         a = [random.randint(n_min, n_max) for i in range(n)]
         b = [random.randint(m_min, m_max) for i in range(m)]
@@ -634,7 +639,7 @@ async def genetic_algorithm():
     # Instantiate and evaluate the first generation
     pop = toolbox.population(n=IND_SIZE)
 
-    await evaluate_generation(toolbox.evaluate, pop)
+    await evaluate_generation(toolbox.evaluate, pop, component_values)
 
     for g in range(NGEN):
         logger.info(f"Generation {g}")
