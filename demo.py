@@ -254,6 +254,23 @@ async def get_simulation_request_bodies():
 
 
 # Asynchronously request simulations to run and await results ##########################
+async def create_instance(href: str, body: dict, q_loc: list):
+
+    headers = None
+    model_id = None
+
+    logger.info(f"Creating new instance of model {model_id}...")
+    logger.trace(f"POST {href}")
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(href, json=body, headers=headers) as res:
+            href_location = res.headers["Location"]
+            logger.trace(f"Location: {href_location}")
+
+            # Enqueue link to resource just created
+            q_loc.append(href_location)
+
+
 async def request_simulation(
     session: aiohttp.ClientSession, id: str, href: str, body: dict, q: asyncio.Queue
 ):
@@ -442,10 +459,50 @@ def demo_efc(ctx):
 
 
 # Demo 2: simulation of many new model instances #######################################
-async def evaluate_generation(evaluate, generation):
+def get_component_values(component_values, ind):
+    return {
+        "R1": int(component_values["r_res"][ind[0]][0]),
+        "R2": int(component_values["r_res"][ind[1]][0]),
+        "R3": int(component_values["r_res"][ind[2]][0]),
+        "R4": int(component_values["r_res"][ind[3]][0]),
+        "TH1": int(component_values["th_res"][ind[4]][0]),
+        "TH2": int(component_values["th_res"][ind[5]][0]),
+        "B1": int(component_values["th_beta"][ind[6]][0]),
+        "B2": int(component_values["th_beta"][ind[7]][0]),
+    }
+
+
+async def evaluate_generation(evaluate, generation, component_values):
     """Asynchronously evaluate fitness for each individual in generation."""
 
+    for ind in generation:
+        logger.trace(f"{ind} => __undefined__")
+
+    # Build list of request parts for creating instances
+    instances_to_create = []
+    for ind in generation:
+        instances_to_create.append(
+            (
+                "http://localhost:4000/model-instances",
+                {
+                    "model": "http://localhost:3100/models/65d7ce93-2804-4faa-a5dd-2fe0f24d8bae/model.fmu",
+                    "parameters": get_component_values(component_values, ind),
+                },
+            )
+        )
+
+    logger.trace(json.dumps(instances_to_create, indent=JSON_DUMPS_INDENT))
+
+    q_loc = []  # container for hrefs to newly created model instances
+
     # Create model instances for all individuals; retrieve their URLs
+    instantiating = [
+        asyncio.create_task(create_instance(h, b, q_loc))
+        for h, b in instances_to_create
+    ]
+    await asyncio.gather(*instantiating)
+
+    logger.trace(json.dumps(q_loc, indent=JSON_DUMPS_INDENT))
 
     # Assemble hrefs and request bodies for simulation of individuals
 
