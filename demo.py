@@ -57,7 +57,7 @@ def timeseries_array_as_df(body: dict):
     return df
 
 
-def dataframe_to_json(df):
+def dataframe_to_json(df, time_is_epoch=True):
     """Render JSON-representation of DataFrame."""
     df.index.name = "datetime"
 
@@ -68,9 +68,11 @@ def dataframe_to_json(df):
         .replace("datetime", "timestamp")
         .replace(df.columns[0], "value")
     )["data"]
-    for x in ts_value_objects:
-        x["datetime"] = pendulum.parse(x["timestamp"]).isoformat()
-        x["timestamp"] = int(pendulum.parse(x["timestamp"]).format("x"))
+    if time_is_epoch is True:
+        for x in ts_value_objects:
+            x["datetime"] = pendulum.parse(x["timestamp"]).isoformat()
+            x["timestamp"] = int(pendulum.parse(x["timestamp"]).format("x"))
+
     return ts_value_objects
 
 
