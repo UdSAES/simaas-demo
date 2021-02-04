@@ -48,6 +48,9 @@ def timeseries_array_as_df(body: dict):
         tmp[f"{result['label']}_unit"] = result["unit"]
         tmp.rename(columns={"value": result["label"]}, inplace=True)
         tmp.sort_values("timestamp", axis="index", inplace=True)
+
+        if "datetime" in tmp.columns:
+            tmp.drop(columns="datetime", inplace=True)
         logger.trace(f"tmp\n{tmp}")
 
         tmp_dfs.append(tmp)
