@@ -17,6 +17,7 @@ import sys
 import uuid
 
 import aiohttp
+import numpy as np
 import pandas as pd
 import pendulum
 import pydash
@@ -641,10 +642,27 @@ async def genetic_algorithm():
     toolbox.register("mate", tools.cxTwoPoint)
     toolbox.register("mutate", tools.mutFlipBit, indpb=MUTPB)
 
+    # Enable collection of statistics
+    stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
+    stats_size = tools.Statistics(key=len)
+    mstats = tools.MultiStatistics(fitness=stats_fit, size=stats_size)
+    mstats.register("max", np.max)
+    mstats.register("avg", np.mean)
+    mstats.register("min", np.min)
+
+    logbook = tools.Logbook()
+    logbook.header = "gen", "evals", "fitness"
+    logbook.chapters["fitness"].header = "max", "avg", "min"
+
+    hall_of_fame = tools.HallOfFame(3)
+
     # Instantiate and evaluate the first generation
     pop = toolbox.population(n=POP_SIZE)
 
     await evaluate_generation(toolbox.evaluate, pop, component_values)
+    record = mstats.compile(pop)
+    logbook.record(gen=0, evals=len(pop), **record)
+    hall_of_fame.update(pop)
 
     for g in range(NGEN):
         logger.info(f"Generation {g}")
@@ -674,6 +692,28 @@ async def genetic_algorithm():
         # The population is entirely replaced by the offspring
         pop[:] = offspring
 
+        # Collect statistics
+        record = mstats.compile(pop)
+        logbook.record(gen=g, evals=len(invalid_ind), **record)
+        hall_of_fame.update(pop)
+
+    logger.success(f"\n{logbook}")
+    conclusion = (
+        f"Hall of Fame:\n"
+        f"1. {hall_of_fame[0]} => {hall_of_fame[0].fitness.values[0]}\n"
+        f"2. {hall_of_fame[1]} => {hall_of_fame[1].fitness.values[0]}\n"
+        f"3. {hall_of_fame[2]} => {hall_of_fame[2].fitness.values[0]}\n"
+    )
+    logger.success(conclusion)
+
+    logger.success(
+        "Best parameter set found:\n{}".format(
+            json.dumps(
+                get_component_values(component_values, hall_of_fame[0]),
+                indent=JSON_DUMPS_INDENT,
+            )
+        )
+    )
 
 @task
 def demo_ga(ctx):
