@@ -296,8 +296,8 @@ async def poll_until_done(
             async with session.get(href, headers=headers) as res:
                 rep = await res.json()
                 status = rep["status"]
-                logger.debug(
-                    f"Polling status of simulation for model run '{id:2d}': {status}"
+                logger.trace(
+                    f"Polling status of simulation for individual '{id}': {status}"
                 )
 
                 if status == "DONE":
@@ -328,7 +328,7 @@ async def fetch_simulation_result(
         headers = {"X-Request-Id": req_id}
 
         # Get simulation result
-        logger.info(f"Retrieving result of simulation for model run '{id:2d}'")
+        logger.info(f"Retrieving result of simulation for individual '{id}''")
         async with session.get(href, headers=headers) as res:
             logger.trace(f"GET {href}")
             rep = await res.json()
@@ -371,7 +371,7 @@ async def await_collection_of_simulatons(dict_id_href_body: dict):
     logger.info("Awaiting the completion of all simulations...")
     await asyncio.gather(*requesting)
 
-    # Wait until the queues are fully processed; then cancel worker tasks&close session
+    # Wait until the queues are fully processed; then cancel worker tasks, close session
     await q_sim.join()
     await q_res.join()
 
