@@ -664,8 +664,8 @@ async def genetic_algorithm():
     logbook.record(gen=0, evals=len(pop), **record)
     hall_of_fame.update(pop)
 
-    for g in range(NGEN):
-        logger.info(f"Generation {g}")
+    for g in [x + 1 for x in range(NGEN - 1)]:
+        logger.success(f"^ {g} ---:::--- {g+1} v")
 
         # Select the next generation individuals
         offspring = toolbox.select(pop, len(pop))
@@ -687,7 +687,10 @@ async def genetic_algorithm():
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        await evaluate_generation(toolbox.evaluate, invalid_ind)
+        # # FIXME not all missing fitness values are updated if you try this!
+        # invalid_ind = pydash.uniq(invalid_ind)
+        if not pydash.is_empty(invalid_ind):
+            await evaluate_generation(toolbox.evaluate, invalid_ind, component_values)
 
         # The population is entirely replaced by the offspring
         pop[:] = offspring
