@@ -1,6 +1,7 @@
 within DemoCloudNativeSIMaaS.ModelExport;
 model TemperatureCompensationFMU "FMU for identification of thermistor-network component values"
-  Circuits.ThermistorBridge thermistorBridge(redeclare Records.Data.TempCompCircuitFromMat data)
+  Circuits.ThermistorBridge thermistorBridge(fileName=fileName,
+                                             redeclare Records.Data.TempCompCircuitFromMat data)
             annotation (Placement(transformation(extent={{10,-10},{30,10}})));
   Modelica.Thermal.HeatTransfer.Sources.PrescribedTemperature prescribedTemperature
     annotation (Placement(transformation(extent={{-44,-4},{-36,4}})));
@@ -21,6 +22,11 @@ model TemperatureCompensationFMU "FMU for identification of thermistor-network c
     annotation (Placement(transformation(extent={{-120,-20},{-80,20}})));
   Modelica.Blocks.Interfaces.RealOutput voltage(unit="V") "Voltage at point B as output signal"
     annotation (Placement(transformation(extent={{90,-10},{110,10}})));
+  parameter String fileName="null" "The path to the .mat-file containing _all_ parameter values";
+  Modelica.Thermal.HeatTransfer.Sensors.TemperatureSensor temperatureSensor
+    annotation (Placement(transformation(extent={{34,34},{46,46}})));
+  Modelica.Blocks.Interfaces.RealOutput tempK(unit="K") "Absolute temperature as output signal"
+    annotation (Placement(transformation(extent={{90,30},{110,50}})));
 equation
   connect(from_degC.y,prescribedTemperature. T) annotation (Line(points={{-49.6,0},{-44.8,0}}, color={0,0,127}));
   connect(prescribedTemperature.port,thermistorBridge. heatPort1)
@@ -35,5 +41,8 @@ equation
     annotation (Line(points={{40,-16},{40,-20},{20,-20},{20,-10}}, color={0,0,255}));
   connect(from_degC.u, temperature) annotation (Line(points={{-58.8,0},{-100,0}}, color={0,0,127}));
   connect(voltageSensor.v, voltage) annotation (Line(points={{46.6,-10},{60,-10},{60,0},{100,0}}, color={0,0,127}));
+  connect(temperatureSensor.port, thermistorBridge.heatPort1)
+    annotation (Line(points={{34,40},{-30,40},{-30,0},{10,0}}, color={191,0,0}));
+  connect(temperatureSensor.T, tempK) annotation (Line(points={{46,40},{100,40}}, color={0,0,127}));
   annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(coordinateSystem(preserveAspectRatio=false)));
 end TemperatureCompensationFMU;
