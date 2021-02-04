@@ -8,6 +8,7 @@
 """Demonstrate performance of SIMaaS-implementation using async IO."""
 
 import asyncio
+import copy
 import csv
 import json
 import os
@@ -21,6 +22,7 @@ import pendulum
 import scipy.io as sio
 from codetiming import Timer
 from deap import base, creator, tools
+from hashids import Hashids
 from invoke import task
 from loguru import logger
 
@@ -505,6 +507,40 @@ async def evaluate_generation(evaluate, generation, component_values):
     logger.trace(json.dumps(q_loc, indent=JSON_DUMPS_INDENT))
 
     # Assemble hrefs and request bodies for simulation of individuals
+    tmp = pd.DataFrame(
+        data={"temperature": list(range(0, 61, 1))}, index=list(range(0, 61, 1))
+    )
+    tmp["temperature"] = 2 * tmp.index - 40
+    request_body = {
+        "modelInstanceID": None,
+        "simulationParameters": {
+            "startTime": 0,
+            "stopTime": 60,
+            "outputInterval": 1,
+        },
+        "inputTimeseries": [
+            {
+                "label": "temperature",
+                "unit": "K",
+                "timeseries": dataframe_to_json(tmp, time_is_epoch=False),
+            }
+        ],
+    }
+
+    logger.trace(json.dumps(request_body, indent=JSON_DUMPS_INDENT))
+
+    dict_id_href_body = {}
+    hashids = Hashids()
+    for ind, href in zip(generation, q_loc):
+        hashid = hashids.encode(*ind)
+        body = copy.deepcopy(request_body)
+        body["modelInstanceID"] = href.split("/")[-1]
+        dict_id_href_body[hashid] = {
+            "href": "http://localhost:4000/experiments",
+            "body": body,
+        }
+
+    logger.trace(json.dumps(dict_id_href_body, indent=JSON_DUMPS_INDENT))
 
     # Await the completion of all simulations in collection
 

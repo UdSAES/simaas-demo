@@ -17,6 +17,8 @@ pandas = "*"
 invoke = "*"
 deap = "*"
 scipy = "*"
+hashids = "*"
+pydash = "*"
 
 [requires]
 python_version = "3.7"
