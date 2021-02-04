@@ -292,6 +292,8 @@ async def poll_until_done(
         counter = 0
         href_result = None
         while counter < counter_max:
+            if counter > (counter_max / 2):
+                freq *= 2
             logger.trace(f"GET {href}")
             async with session.get(href, headers=headers) as res:
                 rep = await res.json()
