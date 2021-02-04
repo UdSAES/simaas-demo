@@ -596,6 +596,11 @@ async def genetic_algorithm():
     }
 
     # Set up genetic algorithm and its parameters ######################################
+    POP_SIZE = 40  # number of individuals in a generation
+    TOURN_SIZE = 3  # number of individuals entered into tournament
+    CXPB = 0.6  # probability with which two individuals are crossed
+    MUTPB = 1 / 8  # probability for mutating an individual
+    NGEN = 8  # number of generations to try
 
     # Generate individuals that match problem representation
     def gen_idx():
@@ -632,12 +637,12 @@ async def genetic_algorithm():
 
     # Register the genetic operators to use
     toolbox.register("evaluate", evaluate_individual)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("select", tools.selTournament, tournsize=TOURN_SIZE)
     toolbox.register("mate", tools.cxTwoPoint)
     toolbox.register("mutate", tools.mutFlipBit, indpb=MUTPB)
 
     # Instantiate and evaluate the first generation
-    pop = toolbox.population(n=IND_SIZE)
+    pop = toolbox.population(n=POP_SIZE)
 
     await evaluate_generation(toolbox.evaluate, pop, component_values)
 
