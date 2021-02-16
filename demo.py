@@ -206,17 +206,20 @@ async def get_simulation_request_bodies():
     with pd.option_context("display.max_rows", None):
         logger.trace(f"df\n{df}")
 
+    # Create model instance to be used
+    for envvar in ["UC1D_SIMAAS_ORIGIN", "UC1D_MAAS_ORIGIN"]:
+        try:
+            os.environ[envvar]
+        except KeyError as e:
+            logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+            sys.exit(EXIT_ENVVAR_MISSING)
+    simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+    maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
+
+
+
     # Construct request bodies from dataframe
     bc = {}
-
-    try:
-        origin = os.environ["UC1D_SIMAAS_ORIGIN"]
-    except KeyError as e:
-        logger.critical(f"Required ENVVAR {e} is not set; exciting.")
-        sys.exit(EXIT_ENVVAR_MISSING)
-
-    href = f"{origin}/experiments"
-
     for model_run in df.index.levels[0]:
         tmp = df.loc[model_run]
         tmp = tmp.interpolate()
@@ -251,7 +254,7 @@ async def get_simulation_request_bodies():
             )
 
         bc[model_run] = {
-            "href": href,
+            "href": f"{simaas_origin}/experiments",
             "body": request_body,
         }
 
@@ -485,14 +488,24 @@ async def evaluate_generation(evaluate, generation, component_values):
     for ind in generation:
         logger.trace(f"{ind} => __undefined__")
 
+    for envvar in ["UC1D_SIMAAS_ORIGIN", "UC1D_MAAS_ORIGIN"]:
+        try:
+            os.environ[envvar]
+        except KeyError as e:
+            logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+            sys.exit(EXIT_ENVVAR_MISSING)
+    simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+    maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
+
+
     # Build list of request parts for creating instances
     instances_to_create = []
     for ind in generation:
         instances_to_create.append(
             (
-                "http://localhost:4000/model-instances",
+                f"{simaas_origin}/model-instances",
                 {
-                    "model": "http://localhost:3100/models/65d7ce93-2804-4faa-a5dd-2fe0f24d8bae/model.fmu",
+                    "model": f"{maas_origin}/models/65d7ce93-2804-4faa-a5dd-2fe0f24d8bae/model.fmu",
                     "parameters": get_component_values(component_values, ind),
                 },
             )
@@ -541,7 +554,7 @@ async def evaluate_generation(evaluate, generation, component_values):
         body = copy.deepcopy(request_body)
         body["modelInstanceID"] = href.split("/")[-1]
         dict_id_href_body[hashid] = {
-            "href": "http://localhost:4000/experiments",
+            "href": f"{simaas_origin}/experiments",
             "body": body,
         }
 
