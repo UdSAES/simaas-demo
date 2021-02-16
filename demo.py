@@ -216,7 +216,38 @@ async def get_simulation_request_bodies():
     simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
     maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
 
+    instances_to_create = [
+        (
+            f"{simaas_origin}/model-instances",
+            {
+                "model": f"{maas_origin}/models/a73e8e8a-9dca-4f74-b45a-5713f5d4564c/model.fmu",
+                "parameters": {
+                    "latitude": 49.31659,
+                    "longitude": 6.749953,
+                    "elevation": 181,
+                    "panelArea": 0.156 * 0.156 * 60 * 156,
+                    "plantEfficiency": 0.17,
+                    "T_cell_ref": 25,
+                    "panelTilt": 28,
+                    "panelAzimuth": 47,
+                    "environmentAlbedo": 0.2,
+                    "nsModule": 6,
+                    "npModule": 26,
+                },
+            },
+        )
+    ]
 
+    logger.trace(json.dumps(instances_to_create, indent=JSON_DUMPS_INDENT))
+
+    q_loc = []  # container for hrefs to newly created model instances
+
+    # Create model instances for all individuals; retrieve their URLs
+    instantiating = [
+        asyncio.create_task(create_instance(h, b, q_loc))
+        for h, b in instances_to_create
+    ]
+    await asyncio.gather(*instantiating)
 
     # Construct request bodies from dataframe
     bc = {}
@@ -228,7 +259,7 @@ async def get_simulation_request_bodies():
 
         # Create request-body
         request_body = {
-            "modelInstanceID": "29f11d50-f11e-46e7-ba2f-7d69f796a101",
+            "modelInstanceID": q_loc[0].split("/")[-1],
             "simulationParameters": {
                 "startTime": start,
                 "stopTime": end,
