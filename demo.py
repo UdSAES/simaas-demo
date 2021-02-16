@@ -684,7 +684,7 @@ async def genetic_algorithm():
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
     # Register the genetic operators to use
-    toolbox.register("evaluate", evaluate_individual)
+    toolbox.register("evaluate", lambda x: x)  # dummy function; registration necessary
     toolbox.register("select", tools.selTournament, tournsize=TOURN_SIZE)
     toolbox.register("mate", tools.cxTwoPoint)
     toolbox.register("mutate", tools.mutFlipBit, indpb=MUTPB)
