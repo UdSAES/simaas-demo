@@ -220,7 +220,8 @@ async def get_simulation_request_bodies():
         (
             f"{simaas_origin}/model-instances",
             {
-                "model": f"{maas_origin}/models/a73e8e8a-9dca-4f74-b45a-5713f5d4564c/model.fmu",
+                "modelId": "a73e8e8a-9dca-4f74-b45a-5713f5d4564c",
+                "modelHref": f"{maas_origin}/models/a73e8e8a-9dca-4f74-b45a-5713f5d4564c/model.fmu",
                 "parameters": {
                     "latitude": {
                         "value": 49.31659,
@@ -593,7 +594,8 @@ async def evaluate_generation(evaluate, generation, component_values):
             (
                 f"{simaas_origin}/model-instances",
                 {
-                    "model": f"{maas_origin}/models/65d7ce93-2804-4faa-a5dd-2fe0f24d8bae/model.fmu",
+                    "modelId": "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae",
+                    "modelHref": f"{maas_origin}/models/65d7ce93-2804-4faa-a5dd-2fe0f24d8bae/model.fmu",
                     "parameters": get_component_values(component_values, ind),
                 },
             )
