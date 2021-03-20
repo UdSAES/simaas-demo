@@ -222,17 +222,50 @@ async def get_simulation_request_bodies():
             {
                 "model": f"{maas_origin}/models/a73e8e8a-9dca-4f74-b45a-5713f5d4564c/model.fmu",
                 "parameters": {
-                    "latitude": 49.31659,
-                    "longitude": 6.749953,
-                    "elevation": 181,
-                    "panelArea": 0.156 * 0.156 * 60 * 156,
-                    "plantEfficiency": 0.17,
-                    "T_cell_ref": 25,
-                    "panelTilt": 28,
-                    "panelAzimuth": 47,
-                    "environmentAlbedo": 0.2,
-                    "nsModule": 6,
-                    "npModule": 26,
+                    "latitude": {
+                        "value": 49.31659,
+                        "unit": "deg",
+                    },
+                    "longitude": {
+                        "value": 6.749953,
+                        "unit": "deg",
+                    },
+                    "elevation": {
+                        "value": 181,
+                        "unit": "m",
+                    },
+                    "panelArea": {
+                        "value": 0.156 * 0.156 * 60 * 156,
+                        "unit": "m2",
+                    },
+                    "plantEfficiency": {
+                        "value": 0.17,
+                        "unit": "1",
+                    },
+                    "T_cell_ref": {
+                        "value": 25,
+                        "unit": "degC",
+                    },
+                    "panelTilt": {
+                        "value": 28,
+                        "unit": "deg",
+                    },
+                    "panelAzimuth": {
+                        "value": 47,
+                        "unit": "deg",
+                    },
+                    "environmentAlbedo": {
+                        "value": 0.2,
+                        "unit": "1",
+                    },
+                    "nsModule": {
+                        "value": 6,
+                        "unit": "1",
+                    },
+                    "npModule": {
+                        "value": 26,
+                        "unit": "1",
+                    },
                 },
             },
         )
@@ -502,14 +535,38 @@ def demo_efc(ctx):
 # Demo 2: simulation of many new model instances #######################################
 def get_component_values(component_values, ind):
     return {
-        "R1": int(component_values["r_res"][ind[0]][0]),
-        "R2": int(component_values["r_res"][ind[1]][0]),
-        "R3": int(component_values["r_res"][ind[2]][0]),
-        "R4": int(component_values["r_res"][ind[3]][0]),
-        "TH1": int(component_values["th_res"][ind[4]][0]),
-        "TH2": int(component_values["th_res"][ind[5]][0]),
-        "B1": int(component_values["th_beta"][ind[6]][0]),
-        "B2": int(component_values["th_beta"][ind[7]][0]),
+        "R1": {
+            "value": int(component_values["r_res"][ind[0]][0]),
+            "unit": "Ohm",
+        },
+        "R2": {
+            "value": int(component_values["r_res"][ind[1]][0]),
+            "unit": "Ohm",
+        },
+        "R3": {
+            "value": int(component_values["r_res"][ind[2]][0]),
+            "unit": "Ohm",
+        },
+        "R4": {
+            "value": int(component_values["r_res"][ind[3]][0]),
+            "unit": "Ohm",
+        },
+        "TH1": {
+            "value": int(component_values["th_res"][ind[4]][0]),
+            "unit": "Ohm",
+        },
+        "TH2": {
+            "value": int(component_values["th_res"][ind[5]][0]),
+            "unit": "Ohm",
+        },
+        "B1": {
+            "value": int(component_values["th_beta"][ind[6]][0]),
+            "unit": "1/K",
+        },
+        "B2": {
+            "value": int(component_values["th_beta"][ind[7]][0]),
+            "unit": "1/K",
+        },
     }
 
 
