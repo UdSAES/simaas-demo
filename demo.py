@@ -293,7 +293,7 @@ async def get_simulation_request_bodies():
 
         # Create request-body
         request_body = {
-            "modelInstanceID": q_loc[0].split("/")[-1],
+            "modelInstanceId": q_loc[0].split("/")[-1],
             "simulationParameters": {
                 "startTime": start,
                 "stopTime": end,
@@ -352,7 +352,7 @@ async def request_simulation(
 ):
     """Request simulation by POSTing `body` to given `href`."""
 
-    iid = body["modelInstanceID"]
+    iid = body["modelInstanceId"]
     req_id = str(uuid.uuid4())
     headers = {"X-Request-Id": req_id}
 
@@ -621,7 +621,7 @@ async def evaluate_generation(evaluate, generation, component_values):
     )
     tmp["temperature"] = 2 * tmp.index - 40
     request_body = {
-        "modelInstanceID": None,
+        "modelInstanceId": None,
         "simulationParameters": {
             "startTime": 0,
             "stopTime": 60,
@@ -644,7 +644,7 @@ async def evaluate_generation(evaluate, generation, component_values):
     for ind, href in zip(generation, q_loc):
         hashid = hashids.encode(*ind)
         body = copy.deepcopy(request_body)
-        body["modelInstanceID"] = href.split("/")[-1]
+        body["modelInstanceId"] = href.split("/")[-1]
         dict_id_href_body[hashid] = {
             "href": f"{simaas_origin}/experiments",
             "body": body,
