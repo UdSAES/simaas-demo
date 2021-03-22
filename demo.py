@@ -293,6 +293,7 @@ async def get_simulation_request_bodies():
 
         # Create request-body
         request_body = {
+            "modelId": "a73e8e8a-9dca-4f74-b45a-5713f5d4564c",
             "modelInstanceId": q_loc[0].split("/")[-1],
             "simulationParameters": {
                 "startTime": start,
@@ -621,6 +622,7 @@ async def evaluate_generation(evaluate, generation, component_values):
     )
     tmp["temperature"] = 2 * tmp.index - 40
     request_body = {
+        "modelId": "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae",
         "modelInstanceId": None,
         "simulationParameters": {
             "startTime": 0,
