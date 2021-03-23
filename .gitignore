@@ -1,3 +1,7 @@
 # Ignore specific files
 weather_forecast.csv
 .env
+
+# Ignore specific directories
+literature/
+Thermistor_MixedIntegerGA/
