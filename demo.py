@@ -215,13 +215,14 @@ async def get_simulation_request_bodies():
             sys.exit(EXIT_ENVVAR_MISSING)
     simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
     maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
+    model_id = "a73e8e8a-9dca-4f74-b45a-5713f5d4564c"
+    model_name = "PhotoVoltaicPowerPlantFMU"
 
     instances_to_create = [
         (
-            f"{simaas_origin}/model-instances",
+            f"{simaas_origin}/models/{model_id}/instances",
             {
-                "modelId": "a73e8e8a-9dca-4f74-b45a-5713f5d4564c",
-                "modelHref": f"{maas_origin}/models/a73e8e8a-9dca-4f74-b45a-5713f5d4564c/model.fmu",
+                "modelName": model_name,
                 "parameters": {
                     "latitude": {
                         "value": 49.31659,
@@ -290,11 +291,11 @@ async def get_simulation_request_bodies():
         tmp = tmp.interpolate()
 
         start = tmp.first_valid_index().timestamp() * 1000
+        model_instance_id = q_loc[0].split("/")[-1]
 
         # Create request-body
         request_body = {
             "modelId": "a73e8e8a-9dca-4f74-b45a-5713f5d4564c",
-            "modelInstanceId": q_loc[0].split("/")[-1],
             "simulationParameters": {
                 "startTime": start,
                 "stopTime": end,
@@ -321,7 +322,7 @@ async def get_simulation_request_bodies():
             )
 
         bc[model_run] = {
-            "href": f"{simaas_origin}/experiments",
+            "href": f"{simaas_origin}/models/{model_id}/instances/{model_instance_id}/experiments",
             "body": request_body,
         }
 
@@ -353,7 +354,7 @@ async def request_simulation(
 ):
     """Request simulation by POSTing `body` to given `href`."""
 
-    iid = body["modelInstanceId"]
+    iid = body["modelId"]
     req_id = str(uuid.uuid4())
     headers = {"X-Request-Id": req_id}
 
@@ -587,17 +588,17 @@ async def evaluate_generation(evaluate, generation, component_values):
             sys.exit(EXIT_ENVVAR_MISSING)
     simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
     maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
-
+    model_id = "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae"
+    model_name = "TemperatureCompensationFMU"
 
     # Build list of request parts for creating instances
     instances_to_create = []
     for ind in generation:
         instances_to_create.append(
             (
-                f"{simaas_origin}/model-instances",
+                f"{simaas_origin}/models/{model_id}/instances",
                 {
-                    "modelId": "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae",
-                    "modelHref": f"{maas_origin}/models/65d7ce93-2804-4faa-a5dd-2fe0f24d8bae/model.fmu",
+                    "modelName": model_name,
                     "parameters": get_component_values(component_values, ind),
                 },
             )
@@ -623,7 +624,6 @@ async def evaluate_generation(evaluate, generation, component_values):
     tmp["temperature"] = 2 * tmp.index - 40
     request_body = {
         "modelId": "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae",
-        "modelInstanceId": None,
         "simulationParameters": {
             "startTime": 0,
             "stopTime": 60,
@@ -648,7 +648,7 @@ async def evaluate_generation(evaluate, generation, component_values):
         body = copy.deepcopy(request_body)
         body["modelInstanceId"] = href.split("/")[-1]
         dict_id_href_body[hashid] = {
-            "href": f"{simaas_origin}/experiments",
+            "href": f"{simaas_origin}/models/{model_id}/instances/{body['modelInstanceId']}/experiments",
             "body": body,
         }
 
