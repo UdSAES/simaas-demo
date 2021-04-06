@@ -215,7 +215,7 @@ async def get_simulation_request_bodies():
             sys.exit(EXIT_ENVVAR_MISSING)
     simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
     maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
-    model_id = "a73e8e8a-9dca-4f74-b45a-5713f5d4564c"
+    model_id = "6157f34f-f629-484b-b873-f31be22269e1"
     model_name = "PhotoVoltaicPowerPlantFMU"
 
     instances_to_create = [
@@ -588,7 +588,7 @@ async def evaluate_generation(evaluate, generation, component_values):
             sys.exit(EXIT_ENVVAR_MISSING)
     simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
     maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
-    model_id = "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae"
+    model_id = "900b37a5-a387-4f1c-ae48-ade392733bae"
     model_name = "TemperatureCompensationFMU"
 
     # Build list of request parts for creating instances
