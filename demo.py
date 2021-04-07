@@ -221,21 +221,31 @@ async def get_simulation_request_bodies():
     with pd.option_context("display.max_rows", None):
         logger.trace(f"df\n{df}")
 
-    # Create model instance to be used
-    for envvar in ["UC1D_SIMAAS_ORIGIN", "UC1D_MAAS_ORIGIN"]:
+    # Ensure that the origin of the API is provided
+    for envvar in ["UC1D_SIMAAS_ORIGIN", "UC1D_EFC_FMU"]:
         try:
             os.environ[envvar]
         except KeyError as e:
             logger.critical(f"Required ENVVAR {e} is not set; exciting.")
             sys.exit(EXIT_ENVVAR_MISSING)
-    simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
-    maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
-    model_id = "6157f34f-f629-484b-b873-f31be22269e1"
-    model_name = "PhotoVoltaicPowerPlantFMU"
 
+    simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+
+    # Add model to API
+    fmu_path = os.environ["UC1D_EFC_FMU"]
+    record_component_names = [
+        "irradianceTemperatureWindSpeed2Power.plantRecord",
+        "irradianceTemperatureWindSpeed2Power.location",
+    ]
+    payload = {"records": ",".join(record_component_names)}
+    model_name = "PhotoVoltaicPowerPlantFMU"
+    model_url = add_model(fmu_path, simaas_origin, payload, model_name)
+    model_id = model_url.split("/")[-1]
+
+    # Create model instance to be used
     instances_to_create = [
         (
-            f"{simaas_origin}/models/{model_id}/instances",
+            f"{model_url}/instances",
             {
                 "modelName": model_name,
                 "parameters": {
@@ -306,11 +316,11 @@ async def get_simulation_request_bodies():
         tmp = tmp.interpolate()
 
         start = tmp.first_valid_index().timestamp() * 1000
-        model_instance_id = q_loc[0].split("/")[-1]
+        model_instance_url = q_loc[0]
 
         # Create request-body
         request_body = {
-            "modelId": "a73e8e8a-9dca-4f74-b45a-5713f5d4564c",
+            "modelId": model_id,
             "simulationParameters": {
                 "startTime": start,
                 "stopTime": end,
@@ -337,7 +347,7 @@ async def get_simulation_request_bodies():
             )
 
         bc[model_run] = {
-            "href": f"{simaas_origin}/models/{model_id}/instances/{model_instance_id}/experiments",
+            "href": f"{model_instance_url}/experiments",
             "body": request_body,
         }
 
@@ -350,7 +360,7 @@ async def get_simulation_request_bodies():
 async def create_instance(href: str, body: dict, q_loc: list):
 
     headers = None
-    model_id = None
+    model_id = href.split("/")[-2]
 
     logger.info(f"Creating new instance of model {model_id}...")
     logger.trace(f"POST {href}")
@@ -589,29 +599,20 @@ def get_component_values(component_values, ind):
     }
 
 
-async def evaluate_generation(evaluate, generation, component_values):
+async def evaluate_generation(evaluate, generation, component_values, model_url):
     """Asynchronously evaluate fitness for each individual in generation."""
 
     for ind in generation:
         logger.trace(f"{ind} => __undefined__")
 
-    for envvar in ["UC1D_SIMAAS_ORIGIN", "UC1D_MAAS_ORIGIN"]:
-        try:
-            os.environ[envvar]
-        except KeyError as e:
-            logger.critical(f"Required ENVVAR {e} is not set; exciting.")
-            sys.exit(EXIT_ENVVAR_MISSING)
-    simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
-    maas_origin = os.environ["UC1D_MAAS_ORIGIN"]
-    model_id = "900b37a5-a387-4f1c-ae48-ade392733bae"
-    model_name = "TemperatureCompensationFMU"
-
     # Build list of request parts for creating instances
+    model_id = model_url.split("/")[-1]
+    model_name = "TemperatureCompensationFMU"
     instances_to_create = []
     for ind in generation:
         instances_to_create.append(
             (
-                f"{simaas_origin}/models/{model_id}/instances",
+                f"{model_url}/instances",
                 {
                     "modelName": model_name,
                     "parameters": get_component_values(component_values, ind),
@@ -638,7 +639,7 @@ async def evaluate_generation(evaluate, generation, component_values):
     )
     tmp["temperature"] = 2 * tmp.index - 40
     request_body = {
-        "modelId": "65d7ce93-2804-4faa-a5dd-2fe0f24d8bae",
+        "modelId": model_id,
         "simulationParameters": {
             "startTime": 0,
             "stopTime": 60,
@@ -663,7 +664,7 @@ async def evaluate_generation(evaluate, generation, component_values):
         body = copy.deepcopy(request_body)
         body["modelInstanceId"] = href.split("/")[-1]
         dict_id_href_body[hashid] = {
-            "href": f"{simaas_origin}/models/{model_id}/instances/{body['modelInstanceId']}/experiments",
+            "href": f"{href}/experiments",
             "body": body,
         }
 
@@ -720,6 +721,21 @@ async def genetic_algorithm():
         "th_res": possible_values["ThVal"],
         "th_beta": possible_values["ThBeta"],
     }
+
+    # Add model to API
+    for envvar in ["UC1D_SIMAAS_ORIGIN", "UC1D_GA_FMU"]:
+        try:
+            os.environ[envvar]
+        except KeyError as e:
+            logger.critical(f"Required ENVVAR {e} is not set; exciting.")
+            sys.exit(EXIT_ENVVAR_MISSING)
+    simaas_origin = os.environ["UC1D_SIMAAS_ORIGIN"]
+
+    fmu_path = os.environ["UC1D_GA_FMU"]
+    record_component_names = ["thermistorBridge.data"]
+    payload = {"records": ",".join(record_component_names)}
+    model_name = "TemperatureCompensationFMU"
+    model_url = add_model(fmu_path, simaas_origin, payload, model_name)
 
     # Set up genetic algorithm and its parameters ######################################
     POP_SIZE = 40  # number of individuals in a generation
@@ -784,7 +800,12 @@ async def genetic_algorithm():
     # Instantiate and evaluate the first generation
     pop = toolbox.population(n=POP_SIZE)
 
-    await evaluate_generation(toolbox.evaluate, pop, component_values)
+    await evaluate_generation(
+        toolbox.evaluate,
+        pop,
+        component_values,
+        model_url,
+    )
     record = mstats.compile(pop)
     logbook.record(gen=0, evals=len(pop), **record)
     hall_of_fame.update(pop)
@@ -815,7 +836,12 @@ async def genetic_algorithm():
         # # FIXME not all missing fitness values are updated if you try this!
         # invalid_ind = pydash.uniq(invalid_ind)
         if not pydash.is_empty(invalid_ind):
-            await evaluate_generation(toolbox.evaluate, invalid_ind, component_values)
+            await evaluate_generation(
+                toolbox.evaluate,
+                invalid_ind,
+                component_values,
+                model_url,
+            )
 
         # The population is entirely replaced by the offspring
         pop[:] = offspring
