@@ -98,6 +98,20 @@ def list_of_tuples_to_df(list_of_tuples):
     return df
 
 
+def add_model(filepath, origin, params, model_name):
+    url = f"{origin}/models"
+    files = {"fmu": ("model.fmu", open(filepath, "rb"), "application/octet-stream")}
+
+    logger.info(f"Adding model <{model_name}.fmu> to SIMaaS-instance...")
+    logger.debug(f"POST {url}")
+
+    r = requests.post(url, params=params, files=files)
+
+    location = r.headers["Location"]
+
+    return location
+
+
 # Get (fake) ensemble weather forecast #################################################
 async def request_weather_forecast(
     session: aiohttp.ClientSession, station_id: str, params: dict, wfc_raw: list
@@ -177,20 +191,7 @@ async def weather_forecasts_as_df(start: int, end: int):
     return df
 
 
-def add_model(filepath, origin, params, model_name):
-    url = f"{origin}/models"
-    files = {"fmu": ("model.fmu", open(filepath, "rb"), "application/octet-stream")}
-
-    logger.info(f"Adding model <{model_name}.fmu> to SIMaaS-instance...")
-    logger.debug(f"POST {url}")
-
-    r = requests.post(url, params=params, files=files)
-
-    location = r.headers["Location"]
-
-    return location
-
-
+# Prepare simulation requests for running the ensemble PV forecast #####################
 async def get_simulation_request_bodies():
     period = pendulum.period(
         pendulum.datetime(2020, 4, 17).start_of("day"),
