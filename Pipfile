@@ -19,6 +19,7 @@ deap = "*"
 scipy = "*"
 hashids = "*"
 pydash = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

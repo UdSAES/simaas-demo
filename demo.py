@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import pendulum
 import pydash
+import requests
 import scipy.io as sio
 from codetiming import Timer
 from deap import base, creator, tools
@@ -174,6 +175,20 @@ async def weather_forecasts_as_df(start: int, end: int):
     df = list_of_tuples_to_df(q_nwp)
 
     return df
+
+
+def add_model(filepath, origin, params, model_name):
+    url = f"{origin}/models"
+    files = {"fmu": ("model.fmu", open(filepath, "rb"), "application/octet-stream")}
+
+    logger.info(f"Adding model <{model_name}.fmu> to SIMaaS-instance...")
+    logger.debug(f"POST {url}")
+
+    r = requests.post(url, params=params, files=files)
+
+    location = r.headers["Location"]
+
+    return location
 
 
 async def get_simulation_request_bodies():
