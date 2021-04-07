@@ -515,7 +515,7 @@ async def ensemble_forecast():
     # Assemble data used as input for simulations ######################################
     timer_wfc = Timer(
         text="Overall duration for preparing weather forecasts: {:.2f} seconds",
-        logger=logger.info,
+        logger=logger.success,
     )
     with timer_wfc:
         dict_id_href_body = await get_simulation_request_bodies()
@@ -530,7 +530,7 @@ async def ensemble_forecast():
 def demo_efc(ctx):
     timer_overall = Timer(
         text="Overall duration for running ensemble forecast: {:.2f} seconds",
-        logger=logger.info,
+        logger=logger.success,
     )
 
     with timer_overall:
@@ -560,7 +560,7 @@ def demo_efc(ctx):
     df1.plot(figsize=(16, 9))
     plt.show()
 
-    logger.info("Done!")
+    logger.success("Done!")
 
 
 # Demo 2: simulation of many new model instances #######################################
