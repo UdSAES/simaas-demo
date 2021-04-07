@@ -35,6 +35,7 @@ JSON_DUMPS_INDENT = 2  # intendation width for stringified JSON in spaces
 # Configure logging
 log_level = os.getenv("UC1D_LOG_LEVEL", "INFO")
 logger.remove()
+logger.level("REQUEST", no=15, color="<light-magenta>")
 logger.add(sys.stdout, level=log_level, diagnose=True, backtrace=False, enqueue=True)
 
 
@@ -103,7 +104,7 @@ def add_model(filepath, origin, params, model_name):
     files = {"fmu": ("model.fmu", open(filepath, "rb"), "application/octet-stream")}
 
     logger.info(f"Adding model <{model_name}.fmu> to SIMaaS-instance...")
-    logger.debug(f"POST {url}")
+    logger.log("REQUEST", f"POST {url}")
 
     r = requests.post(url, params=params, files=files)
 
@@ -363,8 +364,8 @@ async def create_instance(href: str, body: dict, q_loc: list):
     headers = None
     model_id = href.split("/")[-2]
 
-    logger.info(f"Creating new instance of model {model_id}...")
-    logger.trace(f"POST {href}")
+    logger.info(f"Creating new instance of model <{model_id}>...")
+    logger.log("REQUEST", f"POST {href}")
 
     async with aiohttp.ClientSession() as session:
         async with session.post(href, json=body, headers=headers) as res:
@@ -384,8 +385,8 @@ async def request_simulation(
     req_id = str(uuid.uuid4())
     headers = {"X-Request-Id": req_id}
 
-    logger.info(f"Requesting simulation of model instance <{iid}>...")
-    logger.trace(f"POST {href}")
+    logger.info(f"Requesting simulation of model <{iid}>...")
+    logger.log("REQUEST", f"POST {href}")
 
     # Trigger simulation and wait for 201
     async with session.post(href, json=body, headers=headers) as res:
@@ -415,7 +416,7 @@ async def poll_until_done(
         while counter < counter_max:
             if counter > (counter_max / 2):
                 freq *= 2
-            logger.trace(f"GET {href}")
+            logger.log("REQUEST", f"GET {href}")
             async with session.get(href, headers=headers) as res:
                 rep = await res.json()
                 status = rep["status"]
@@ -453,7 +454,7 @@ async def fetch_simulation_result(
         # Get simulation result
         logger.info(f"Retrieving result of simulation for individual '{id}''")
         async with session.get(href, headers=headers) as res:
-            logger.trace(f"GET {href}")
+            logger.log("REQUEST", f"GET {href}")
             rep = await res.json()
             logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
