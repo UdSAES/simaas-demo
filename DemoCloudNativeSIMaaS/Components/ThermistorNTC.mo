@@ -31,5 +31,6 @@ annotation (defaultComponentName="thermistor",
           Text(
             extent={{-150,90},{150,50}},
             textString="%name",
-            lineColor={0,0,255})}));
+            lineColor={0,0,255}),
+        Line(points={{-70,-40},{-34,-40},{70,42}}, color={28,108,200})}));
 end ThermistorNTC;
