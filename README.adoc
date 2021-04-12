@@ -45,11 +45,11 @@ All environment variables without a default value MUST be set before starting th
 | The minimal included https://loguru.readthedocs.io/en/stable/api/logger.html#levels[log level] that shall be printed
 | `INFO`
 
-| UC1D_EFC_FMU
+| `UC1D_EFC_FMU`
 | The path to the FMU used for the ensemble PV forecast
 | --
 
-| UC1D_EFC_GA
+| `UC1D_EFC_GA`
 | The path to the FMU used for the parameter fitting-example using a genetic algorithm
 | --
 |===
