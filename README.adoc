@@ -55,10 +55,25 @@ All environment variables without a default value MUST be set before starting th
 |===
 
 == Usage
+[source,sh]
+----
+# Activate virtual environment
+pipenv shell
 
-`clear; source .env; invoke -c demo --list`
+# List available demos
+invoke -c demo --list
+
+# Load ENVVARs and run demo
+source .env; invoke -d demo demo-efc
+----
 
 ...
 
 == Development
+[source,sh]
+----
+isort .  # ensure that `import`-statements are consistently sorted
+black .  # format all Python code files using Black
+----
+
 ...
