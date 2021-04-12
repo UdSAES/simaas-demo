@@ -5,3 +5,51 @@ image:https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelCo
 
 This repository contains the code used for demonstrating the capabilities of the cloud-native _simulation as a service_-implementation developed at the chair of automation and energy systems at Saarland university.
 
+== Installation
+...
+
+=== Configuration
+All environment variables without a default value MUST be set before starting the program. Otherwise, a fatal error will be raised and the program will terminate with a non-zero exit code.
+
+[#tbl-envvars,options="header",cols="2,5,1"]
+|===
+| Environment Variable
+| Description
+| Default Value
+
+| `UC1D_WEATHER_API_ORIGIN`
+| The origin of the URL identifying/locating an instance of the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]; e.g.: `https://weather.designetz.saarland`
+| --
+
+| `UC1D_WEATHER_API_JWT`
+| The JSON web token for authentication with the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]
+| `None`
+
+| `UC1D_WEATHER_FROM_DISK`
+| Load the weather data from `./weather_forecast.csv` if `true`; request from API otherwise
+| `false`
+
+| `UC1D_SIMAAS_ORIGIN`
+| The origin of the URL identifying/locating simulation as a service-instance; e.g.: `https://simaas.nibbler.msaas.me`
+| --
+
+| `UC1D_POLLING_RETRIES`
+| The maximum number of retries for polling the status of a simulation (parsed as integer)
+| 30
+
+| `UC1D_POLLING_FREQUENCY`
+| The time between to retries for polling the status of a simulation in seconds (parsed as float)
+| 0.1
+
+| `UC1D_LOG_LEVEL`
+| The minimal included https://loguru.readthedocs.io/en/stable/api/logger.html#levels[log level] that shall be printed
+| `INFO`
+
+| UC1D_EFC_FMU
+| The path to the FMU used for the ensemble PV forecast
+| --
+
+| UC1D_EFC_GA
+| The path to the FMU used for the parameter fitting-example using a genetic algorithm
+| --
+|===
