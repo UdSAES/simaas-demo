@@ -53,3 +53,12 @@ All environment variables without a default value MUST be set before starting th
 | The path to the FMU used for the parameter fitting-example using a genetic algorithm
 | --
 |===
+
+== Usage
+
+`clear; source .env; invoke -c demo --list`
+
+...
+
+== Development
+...
