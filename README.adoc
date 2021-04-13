@@ -64,7 +64,7 @@ pipenv shell
 invoke -c demo --list
 
 # Load ENVVARs and run demo
-source .env; invoke -d demo demo-efc
+source .env; invoke -c demo demo-efc
 ----
 
 ...
