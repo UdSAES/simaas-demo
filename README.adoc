@@ -30,7 +30,7 @@ All environment variables without a default value MUST be set before starting th
 | `false`
 
 | `UC1D_SIMAAS_ORIGIN`
-| The origin of the URL identifying/locating simulation as a service-instance; e.g.: `https://simaas.nibbler.msaas.me`
+| The origin of the URL identifying/locating simulation as a service-instance. Make sure that this can be resolved from the `simaas-worker`-instances (i.e. don't use `localhost`)!
 | --
 
 | `UC1D_POLLING_RETRIES`
@@ -49,7 +49,7 @@ All environment variables without a default value MUST be set before starting th
 | The path to the FMU used for the ensemble PV forecast
 | --
 
-| `UC1D_EFC_GA`
+| `UC1D_GA_FMU`
 | The path to the FMU used for the parameter fitting-example using a genetic algorithm
 | --
 |===
