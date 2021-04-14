@@ -521,20 +521,21 @@ async def ensemble_forecast():
         dict_id_href_body = await get_simulation_request_bodies()
 
     # Await the completion of all simulations in collection
-    q_repr_all = await await_collection_of_simulatons(dict_id_href_body)
+    timer_overall = Timer(
+        text="Overall duration for running all simulations: {:.2f} seconds",
+        logger=logger.success,
+    )
+
+    with timer_overall:
+        q_repr_all = await await_collection_of_simulatons(dict_id_href_body)
 
     return q_repr_all
 
 
 @task
 def demo_efc(ctx):
-    timer_overall = Timer(
-        text="Overall duration for running ensemble forecast: {:.2f} seconds",
-        logger=logger.success,
-    )
-
-    with timer_overall:
-        q_repr_all = asyncio.run(ensemble_forecast())
+    # Run ensemble forecast
+    q_repr_all = asyncio.run(ensemble_forecast())
 
     # Assemble all simulation results in a MultiIndex-dataframe
     df = list_of_tuples_to_df(q_repr_all)
