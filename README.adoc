@@ -35,11 +35,11 @@ All environment variables without a default value MUST be set before starting th
 
 | `UC1D_POLLING_RETRIES`
 | The maximum number of retries for polling the status of a simulation (parsed as integer)
-| 30
+| `30`
 
 | `UC1D_POLLING_FREQUENCY`
 | The time between to retries for polling the status of a simulation in seconds (parsed as float)
-| 0.1
+| `0.1`
 
 | `UC1D_LOG_LEVEL`
 | The minimal included https://loguru.readthedocs.io/en/stable/api/logger.html#levels[log level] that shall be printed

@@ -129,7 +129,7 @@ async def request_weather_forecast(
     )
 
     async with session.get(href, params=params) as res:
-        logger.trace(f"GET {res.url}")
+        logger.log("REQUEST", f"GET {res.url}")
         rep = await res.json()
         logger.trace(json.dumps(rep, indent=JSON_DUMPS_INDENT))
 
