@@ -5,6 +5,11 @@ image:https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelCo
 
 This repository contains the code used for demonstrating the capabilities of the cloud-native _simulation as a service_-implementation developed at the chair of automation and energy systems at Saarland university.
 
+== Status
+* 2021-05-10: The code works, but may need some refactoring to ensure it doesn't rely on things that should not be hardcoded. The README needs an update, too.
++
+*Work in Progress!* We're on it, though.
+
 == Installation
 ...
 
