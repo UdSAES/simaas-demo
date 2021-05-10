@@ -18,7 +18,7 @@ All environment variables without a default value MUST be set before starting th
 | Default Value
 
 | `UC1D_WEATHER_API_ORIGIN`
-| The origin of the URL identifying/locating an instance of the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]; e.g.: `https://weather.designetz.saarland`
+| The origin of the URL identifying/locating an instance of the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]; e.g.: `https://weather.nibbler.msaas.me`
 | --
 
 | `UC1D_WEATHER_API_JWT`
