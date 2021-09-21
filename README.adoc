@@ -19,18 +19,6 @@ For example, the ENVVARs can be set by putting `export SIMAAS_*=...`-statements 
 | Description
 | Default Value
 
-| `UC1D_WEATHER_API_ORIGIN`
-| The origin of the URL identifying/locating an instance of the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]; e.g.: `https://weather.nibbler.msaas.me`
-| -- footnote:[This is _not_ necessary iff `UC1D_WEATHER_FROM_DISK` is `true`!]
-
-| `UC1D_WEATHER_API_JWT`
-| The JSON web token for authentication with the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]
-| `None`
-
-| `UC1D_WEATHER_FROM_DISK`
-| Load the weather data from `./weather_forecast.csv` if `true`; request from API otherwise
-| `false`
-
 | `UC1D_SIMAAS_ORIGIN`
 | The origin of the URL identifying/locating simulation as a service-instance. Make sure that this can be resolved from the `simaas-worker`-instances (i.e. don't use `localhost` if running containers)!
 | --
@@ -54,6 +42,19 @@ For example, the ENVVARs can be set by putting `export SIMAAS_*=...`-statements 
 | `UC1D_GA_FMU`
 | The path to the FMU used for the parameter fitting-example using a genetic algorithm
 | --
+
+| `UC1D_WEATHER_FROM_DISK`
+| Load the weather data from `./weather_forecast.csv` if `true`; request from API otherwise
+| `true`
+
+| `UC1D_WEATHER_API_ORIGIN`
+| The origin of the URL identifying/locating an instance of the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]; e.g.: `https://weather.nibbler.msaas.me`
+| -- footnote:[This is _not_ necessary iff `UC1D_WEATHER_FROM_DISK` is `true`!]
+
+| `UC1D_WEATHER_API_JWT`
+| The JSON web token for authentication with the https://github.com/UdSAES/dwd_data_access[dwd_data_access-API]
+| `None`
+
 |===
 
 == Usage

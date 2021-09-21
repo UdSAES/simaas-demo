@@ -208,7 +208,7 @@ async def get_simulation_request_bodies():
 
     # Fetch weather forecasts and store in MultiIndex-dataframe
     outfile = "./weather_forecast.csv"  # FIXME
-    if os.getenv("UC1D_WEATHER_FROM_DISK", "false") == "true":
+    if os.getenv("UC1D_WEATHER_FROM_DISK", "true") == "true":
         # Alternatively, load weather data from disk to save time during development
         df = pd.read_csv(
             outfile,
