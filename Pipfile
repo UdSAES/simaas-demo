@@ -4,14 +4,14 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-black = "*"
+black = "==21.9b0"
 isort = "*"
 matplotlib = "*"
 
 [packages]
 loguru = "*"
 codetiming = "*"
-aiohttp = "~=3.6"
+aiohttp = "*"
 pendulum = "*"
 pandas = "*"
 invoke = "*"
@@ -22,7 +22,7 @@ pydash = "*"
 requests = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.9"
 
 [pipenv]
 allow_prereleases = true
