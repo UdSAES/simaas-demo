@@ -11,7 +11,7 @@ Clone the repository, then install the dependencies (specified in `Pipfile`/`Pip
 === Configuration
 All environment variables without a default value MUST be set before starting the program. Otherwise, a fatal error will be raised and the program will terminate with a non-zero exit code.
 
-For example, the ENVVARs can be set by putting `export SIMAAS_*=...`-statements in a file named `.env` and then loading the contents of this file via `source .env`.
+For example, the ENVVARs can be set by putting `export UC1D_*=...`-statements in a file named `.env` and then loading the contents of this file via `source .env`.
 
 [#tbl-envvars,options="header",cols="2,5,1"]
 |===
