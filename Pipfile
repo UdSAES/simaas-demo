@@ -6,7 +6,6 @@ verify_ssl = true
 [dev-packages]
 black = "==21.9b0"
 isort = "*"
-matplotlib = "*"
 
 [packages]
 loguru = "*"
@@ -20,6 +19,7 @@ scipy = "*"
 hashids = "*"
 pydash = "*"
 requests = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.9"
