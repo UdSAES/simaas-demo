@@ -11,6 +11,7 @@ import asyncio
 import copy
 import csv
 import json
+import math
 import os
 import random
 import sys
@@ -565,38 +566,90 @@ def demo_efc(ctx):
 
 
 # Demo 2: simulation of many new model instances #######################################
+def get_values_e24_series(lower, upper):
+    """
+    Return the values of the E24 series between `lower` and `upper`.
+
+    Both `lower` and `upper` are included in the result.
+    See https://en.wikipedia.org/wiki/E_series_of_preferred_numbers for details.
+    """
+    lower = float(lower)
+    upper = float(upper)
+
+    e24_values = [
+        1.0,
+        1.1,
+        1.2,
+        1.3,
+        1.5,
+        1.6,
+        1.8,
+        2.0,
+        2.2,
+        2.4,
+        2.7,
+        3.0,
+        3.3,
+        3.6,
+        3.9,
+        4.3,
+        4.7,
+        5.1,
+        5.6,
+        6.2,
+        6.8,
+        7.5,
+        8.2,
+        9.1,
+    ]
+
+    s = pd.Series(data=e24_values)
+
+    powered = []
+    for power in range(int(math.log(lower, 10)), int(math.log(upper, 10)) + 1):
+        powered.append(s * (10 ** power))
+
+    s = s.append(powered)
+    s.sort_values(inplace=True)
+    s.drop_duplicates(inplace=True)
+
+    r = s[s.between(lower, upper, inclusive="both")]
+
+    return r.to_numpy()
+
+
 def get_component_values(component_values, ind):
     return {
         "R1": {
-            "value": int(component_values["r_res"][ind[0]][0]),
+            "value": int(component_values["r_res"][ind[0]]),
             "unit": "Ohm",
         },
         "R2": {
-            "value": int(component_values["r_res"][ind[1]][0]),
+            "value": int(component_values["r_res"][ind[1]]),
             "unit": "Ohm",
         },
         "R3": {
-            "value": int(component_values["r_res"][ind[2]][0]),
+            "value": int(component_values["r_res"][ind[2]]),
             "unit": "Ohm",
         },
         "R4": {
-            "value": int(component_values["r_res"][ind[3]][0]),
+            "value": int(component_values["r_res"][ind[3]]),
             "unit": "Ohm",
         },
         "TH1": {
-            "value": int(component_values["th_res"][ind[4]][0]),
+            "value": int(component_values["th_res"][ind[4]]),
             "unit": "Ohm",
         },
         "TH2": {
-            "value": int(component_values["th_res"][ind[5]][0]),
+            "value": int(component_values["th_res"][ind[5]]),
             "unit": "Ohm",
         },
         "B1": {
-            "value": int(component_values["th_beta"][ind[6]][0]),
+            "value": int(component_values["th_beta"][ind[6]]),
             "unit": "1/K",
         },
         "B2": {
-            "value": int(component_values["th_beta"][ind[7]][0]),
+            "value": int(component_values["th_beta"][ind[7]]),
             "unit": "1/K",
         },
     }
@@ -715,14 +768,34 @@ async def genetic_algorithm():
     https://deap.readthedocs.io/en/master/overview.html
     """
 
-    # Load possible component parameters from disk
-    possible_values_file = "./Thermistor_MixedIntegerGA/StandardComponentValues.mat"
-    possible_values = sio.loadmat(possible_values_file)
-
     component_values = {
-        "r_res": possible_values["Res"],
-        "th_res": possible_values["ThVal"],
-        "th_beta": possible_values["ThBeta"],
+        "r_res": get_values_e24_series(300, 220000),
+        "th_res": np.array(
+            [
+                50,
+                220,
+                1000,
+                2200,
+                3300,
+                4700,
+                10000,
+                22000,
+                33000,
+            ]
+        ),
+        "th_beta": np.array(
+            [
+                2750,
+                3680,
+                3560,
+                3620,
+                3528,
+                3930,
+                3960,
+                4090,
+                3740,
+            ]
+        ),
     }
 
     # Add model to API
